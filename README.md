@@ -4,7 +4,7 @@
 
 Enguino (a portmanteau of engine and Arduino) is an inexpensive _(about $100)_, lightweight _(2 ounces w/o case or cables)_, small _(about the size of cigarette pack)_, [open source] engine monitor for experimental aircraft. The engine monitor is displayed on a tablet as a web page. Here is an [example] of a typical Enguino display. The tablet can be an iPad, an Android or any other tablet that includes a modern web browser and has wifi.
 
-Enguino is intended to work with the [Stratux] ADS-B receiver which is also open source. The Stratux acts as a Wifi access point for Enguino. For airplanes not equipped with a Stratux it is still possible to create an Enguino system with slightly different hardware and a small change to the configuration.
+Enguino is intended to work with the [Stratux] ADS-B receiver which is also open source. The Stratux acts as a Wifi router for Enguino. For airplanes not equipped with a Stratux it is still possible to create an Enguino system with slightly different hardware and a small change to the configuration.
 
 The hardware consists of a tiny single board computer called an [Arduino]. This board is similar to the Raspberry Pi used in the Stratux, although the Arduino has a much simpler computer on it. Despite being a simple computer, the Arduino is much better at connecting to the real world.
 
@@ -29,6 +29,7 @@ The firmware is installed on the Arduino using the Arduino IDE. First install th
 ### Sensors
 
 ### Layout
+During design and testing of the layout it may be helpful to connect the Enguino to your local network instead of the Stratux. You may need to update the IP address in the Enguino.ino file. If you do do so, remember to change it back after finalizing the layout. To see values on the gauges while testing, uncomment out the line `#define RANDOM_SENSORS 1`
 
 ### Ranges
 
@@ -82,7 +83,7 @@ Browse to 192.168.0.111, confirm Engiuno panel shows up.
 
 ### Arduino
 
-The Leonardo is rated to run from 6-20 volts although they suggest keeping it between 7-12 volts. They claim to worry about the voltage regulator overheating and 'damaging the board', but the regulator chip (88% efficient) does have a thermal shutdown feature at 150 deg C. The text appears to be a carry over from previous Arduino's which used a linear supply.
+The Leonardo is rated to run from 6-20 volts although they suggest keeping it between 7-12 volts. They claim to worry about the voltage regulator overheating and 'damaging the board', but the regulator chip (88% efficient) does have a thermal shutdown feature at 150 deg C. The text appears to be a carry over from previous Arduino's which used a linear supply. **TBD** if heating is a problem. **TBD** if voltage sag during starting is a problem.
 
 The supply is rated for 1000 ma. The Leonardo uses 82 mA. Testing will need to be done to determine actual power used.
 
@@ -119,7 +120,7 @@ The Arduino serves up several web pages which are used to create the display.
 * Dynamic page (http://d) contains the dynamic web content that displays the gauges.
 * Setup page (http://s) contains a simple web form for setting the fuel totalizer.
 
-The main webpage has a timer running in Javascript on the tablet that invokes a reload of the dynamic portion of the page using an AJAX request. The dynamic portion is drawn using SVG (scaled vectored graphics) that is created on the fly by the Enguino.ino file. The configuration tables in config.h control how the SVG is drawn, for example the layout of the gauges on the screen.
+The main webpage has a timer running in Javascript on the tablet that invokes a reload of the dynamic portion of the page using an AJAX request. The dynamic portion is drawn using SVG (scaled vectored graphics) that is created on the fly by the Arduino. The configuration tables in config.h control how the SVG is drawn, for example the layout of the gauges on the screen.
 
 ### Sensors
 
@@ -181,7 +182,8 @@ To prevent having to re-acknowledge warnings there would be both temporal and ra
 * Break Away Headers - Straight ($1.50 sparkfun)
 * More digikey parts - make above parts digikey as well
 * Note - stackable headers are Samtec SAM1206-#pins-ND, no workable shorter lengths available
-* Digikey 929647-05-35-ND .025 square breakaway headers will probably work well on the thermocouple board w/o a header extension.
+* .025 square breakaway headers - Digikey 929647-04-35-ND - will probably work well on the thermocouple board w/o a header extension.
+* 500 ohm potentiometer - Digikey 987-1738-ND - used to simulate a resitive sensor to determine transfer function
 
 ### Future stuff
 * It may be possible to support 2 thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a thermistor. Only 8 bits are usable with 40x. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably double it again.

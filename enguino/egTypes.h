@@ -1,5 +1,8 @@
-typedef const char * string;
+// sketches don't like typdef's so they are in in this header file instead
 
+#define N(x) sizeof(x)/sizeof(x[0])
+
+typedef const char * string;
 
 enum SensorType {st_ohms, st_thermistor, st_volts, st_thermocouple};
 // st_ohms -        320 - 2400      32-240 ohms in tenths
