@@ -36,6 +36,9 @@ int readPin(int p);
 // Implementation for printPrefix and pringGauge
 #include "printGauges.h"
 
+#include "printAux.h"
+
+// Measure thermocouple tempertaures in the background
 #include "tcTemp.h"
 
 
@@ -90,6 +93,9 @@ void setup() {
 //    ; // wait for serial port to connect. Stops code until Serial Monitor is started. Good for debugging setup
 
   tcTempSetup();
+  printLEDSetup();
+  printLED(0,LED_TEXT(h,o,b,b));
+  printLED(1,readPin(0),0);   // replace this with a scaled sensor value
   delay(1000);    // replace this with LED self test sequence
 
   // start the Ethernet connection and the server:

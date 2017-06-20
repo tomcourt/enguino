@@ -1,3 +1,5 @@
+// Measure thermocouple tempertaures in the background
+
 // Pinout for Ocean Design's Thermocouple Multiplexer Shield
 #define PINEN 7 // TC Mux Enable pin
 #define PINA0 4 // TC Mux Address 0 pin

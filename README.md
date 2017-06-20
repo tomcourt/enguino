@@ -8,7 +8,7 @@ Enguino is intended to work with the [Stratux] ADS-B receiver which is also open
 
 The hardware consists of a tiny single board computer called an [Arduino]. This board is similar to the Raspberry Pi used in the Stratux, although the Arduino has a much simpler computer on it. Despite being a simple computer, the Arduino is much better at connecting to the real world.
 
-Tablets and and wifi communication alone shouldn't be counted upon for critical flight information. Therefore it is recommended that you don't replace your fuel gauges, tachometer and in the case of a constant speed prop your manifold pressure gauge with Enguino. To allow flying without the Enguino display, either because of tablet or wifi issues or your tablet also multitasks as a moving map a number of physical status lights(LEDs) are also included in Enguino that will display your oil pressure, oil temperature and voltage status constantly without requiring the tablet.
+Because Enguino is experimental, it is recommended that you don't replace your legally required gauges with Enguino. Also tablets and and wifi communication alone shouldn't be counted upon for critical flight information. Furthermore you may not have a dedicated tablet for Enguino. For these reasons an auxiliary display is an optional part of Enguino. It consists of a simple LED display that normally displays tachometer and fuel gauges but can also display engine alerts and warnings.
 
 ## Hardware
 
@@ -138,18 +138,20 @@ Typical sensors are Stewart Warner. The tachometer is supplied with 12 volts, a 
 
 For a sensor that might contain a voltage higher than Vcc using a voltage divider as used on the voltage sensor will cause a significant load which could create issues if still attached to a backup gauge. Alternatively a 15K ohm resistor between the sensor and the pin will safely clip voltages between 20.5 and -15.5 volts. The goal here is to limit the internal clamping diodes to no more than 1ma after the .7 volt diode drop.
 
-### Warning Lights / Auxiliary Display
+### Auxiliary Display
 
-The board has 4 caution/warning LEDs. These are intended it to be more useful than _idiot_ lights because of self diagnostics and their ability to display both caution and warning indications. Each is a Red/Green common cathode [bicolor LED]. By turning Red and Green on at the same time Yellow can also be produced.  Dimming could be provided by biases the ground of the common cathodes or by using the Arduino's PWM to drive a FET. The LED's anodes are connected to a [MCP23008] I2C I/O expander through 8 dropping resistors. Typically three of the LEDs will be for Oil Temperature, Oil Pressure and Voltage. Another alternative would be to use a module like the [BOB-13884] to provide 3 RGB LED's.
+The auxiliary display consists of two lines of a 4 digit [7 segment LED displays]. Limited text would be shown on the s. Some letters are displayed in the wrong case, for example 't' instead of 'T'. The letters 'M', 'W' and 'X' can not be displayed in an any form. Others like 'V' end up looking the same as 'U'.
 
-An alternative to the warning LEDs is an auxiliary display. This would consist of one or two lines of a 4 digit [7 segment LED displays]. Limited text would be shown on the display. Some letters are displayed in the wrong case, for example 't' instead of 'T'. The letters 'M', 'W' and 'X' can not be displayed in an any form. Others like 'V' end up looking the same as 'U'. For this reason the first line may be a [14 segment LED display].
+A caution/warning [bicolor LED] is reworked by soldering onto the 'colon' column of the top display. This would be easier to see and interpret than the decimal point indicators. Red - warning, yellow - alert, green - ok.
 
-In normal operation the tachometer and fuel for left and right tank in gallons would be shown as `2300` / `15:10`. For a single line display these would alternate. Excessive RPM's would cause the tachometer to blink. On power up the following sequence would be shown:
+An acknowledge pushbutton is also part of the display.
+
+In normal operation the tachometer and fuel for left and right tank in gallons would be shown as `2300` / `15:10`. Excessive RPM's would cause the tachometer to blink. On power up the following sequence would be shown:
 * `Hobb` / `123.4`    only last 4 digits of hobbs shown
 * `bAt` / `12.2`      alternator-battery voltage
 * `   0` / `15:10`
 
-Whenever out of range indicators happen the display would switch to showing the condition and the value, for example `OPLo` / `2.4`. A 'warning' (red) out of range will be indicated by the first line blinking quickly. Pressing the 'Acknowledge' button would return the display to showing tachometer and fuel. To indicate a caution condition (yellow) still remains, the rightmost decimal point on the first line would be lit. To indicate a warning condition (red) remains, all of the decimal points on the first line would be lit. On power up, most of the warnings would be acknowledged by default. Holding the acknowledge button for longer than a second would show previously acknowledged warnings, followed by cautions, followed by readings with each press. A long hold again would return the display to tachometer and fuel. A very long press (>4 seconds) toggles a dim mode.
+Whenever out of range indicators happen the display would switch to showing the condition and the value, for example `OPLo` / `2.4`. A 'warning' (red) out of range will be indicated by the first line blinking quickly and the warning LED also blinking red. Pressing the 'Acknowledge' button would return the display to showing tachometer and fuel. The warning LED would continue to be red. In the case of a caution condition (yellow range) the LED would turn yellow. When the engine isn't turning some warnings are suppressed and 'alternator voltage' becomes 'battery voltage' which has a lower warning level. Holding the acknowledge button for longer than a second would show previously acknowledged warnings, followed by any outstanding cautions, followed by readings with each press. A long hold again would return the display to tachometer and fuel. A very long press (>4 seconds) toggles a dim mode.
 
 The warning/cautions are prioritized as follows:
 * `FPLo`
@@ -183,12 +185,16 @@ To prevent having to re-acknowledge warnings there would be both temporal and ra
 * More digikey parts - make above parts digikey as well
 * Note - stackable headers are Samtec SAM1206-#pins-ND, no workable shorter lengths available
 * .025 square breakaway headers - Digikey 929647-04-35-ND - will probably work well on the thermocouple board w/o a header extension.
-* 500 ohm potentiometer - Digikey 987-1738-ND - used to simulate a resitive sensor to determine transfer function
+* 500 ohm potentiometer - Digikey 987-1738-ND - used to simulate a resistive sensor to determine transfer function
+* Resistor decade/substitution box, ~$32 Amazon
+* K style thermocouple wire, 24-26 gauge, EBay
 
 ### Future stuff
 * It may be possible to support 2 thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a thermistor. Only 8 bits are usable with 40x. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably double it again.
 * The Arduino Yun would support airplanes lacking a Stratux. The code would need to use the 'bridge' objects instead of the ethernet objects. Use #ifdef AVR_YUN to flex the code.
 * Themes - a dark theme could be created easily enough by adjusting the styles. A larger text theme for the gauges would involve more defines and stringizing them for the SVG.
+* Warning lights instead of auxillary display? A board with 4 caution/warning LEDs (red/green common cathode [bicolor LED]). Turning red and green on produces yellow. Alternatively use a module like the [BOB-13884] to provide 3 RGB LED's.
+
 
 ### To be added
 [open source]:https://en.wikipedia.org/wiki/Open-source_model

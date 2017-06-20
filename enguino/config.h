@@ -4,16 +4,21 @@ const char *red = "red";
 
 #define divisor 13  // 1<<13 = 8192, this allows factors between -2.0 to 1.999
                     // for the 0-1023 ADC values, multiply range by 8 for full scale
-const Sensor opS = {    st_volts,   0,   800,  0,  8008};    // 0 - 100
-const Sensor otS = {    st_volts,   50,  400,  0,  8008};    // 50 - 250
-const Sensor vtS = {    st_volts,   100, 4000,  0, 8008};    // 100 - 600  (10 - 16)
-const Sensor fpS = {    st_volts,   0,   800,  0,  8008};    // 0 - 100    (0 - 10)
-const Sensor flS = {    st_volts,   0,   1280,  0, 8008};    // 0 - 160    (0 - 16)
+
+// Sensor defintions and scaling
+// -----------------------------
+const Sensor opS = {    st_volts,   0,    800,  0,  8008};   // 0 - 100
+const Sensor otS = {    st_volts,   50,   400,  0,  8008};   // 50 - 250
+const Sensor vtS = {    st_volts,   100 ,4000,  0,  8008};   // 100 - 600  (10 - 16)
+const Sensor fpS = {    st_volts,   0,    800,  0,  8008};   // 0 - 100    (0 - 10)
+const Sensor flS = {    st_volts,   0,   1280,  0,  8008};   // 0 - 160    (0 - 16)
 const Sensor taS = {    st_volts,   0,  12000,  0,  8008 };  // 0 - 3000 
 const Sensor maS = {    st_volts,   100, 2000,  0,  8008};   // 100 - 350   (10 - 35)
 const Sensor chS = {    st_volts,   100, 3200,  0,  8008};   // 100 - 500,  input is .25 C, convert to whole F   
 const Sensor egS = {    st_volts,   1000,4800,  0,  8008};   // 1000 - 1600,  input is .25 C, convert to to whole F
 
+// Labels
+// ------
 string opLV[] =   { "80", "60", "40", "20"  };
 const int opLP[] =  { 800,  1600, 2400, 3200 };
 string otLV[] =   { "200",  "150",  "100" };
@@ -29,7 +34,8 @@ const int chLP[] =  { 2000,   4000, 6000 };
 string egLV[] =   { "1150&deg;",  "1300&deg;",  "1450&deg;" };
 const int egLP[] =  { 2000,   4000, 6000 };
 
-
+// Color regions
+// -------------
 string opRC[] = { red,    yellow, green,  red     };
 int    opRP[] = { 1000,   2200,   3800,   4000      };
 string otRC[] = { yellow, green,  red         };
@@ -51,7 +57,8 @@ int    maRP[] = { 1126,                     // x
 string chRC[] = { yellow, green, yellow,  red     };
 int    chRP[] = { 1000,   6000,   7940,   8000    };
 
-
+// Gauge layout for screen
+// -----------------------
 #define bank 3500   // bank of misc vertical gauges
 const Gauge gauges[] = {
   //  x,      y,  style,  decimal,  label1, label2, units,  labVal, labPt,num,    regClr, regPt, num,    sensor,  pin
