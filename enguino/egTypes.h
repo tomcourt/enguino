@@ -4,11 +4,13 @@
 
 typedef const char * string;
 
-enum SensorType {st_ohms, st_thermistor, st_volts, st_thermocouple};
-// st_ohms -        320 - 2400      32-240 ohms in tenths
-// st_thermistor -  300 - 3000      30-300 degrees F. in tenths
-// st_volts -        0  - 1023      ADC units 4.88 mV/per
-// st_thermocouple - 0  - 4000      0-1000 degrees C. in quarters
+enum SensorType {st_r240to33, st_thermistor, st_volts, st_thermocouple, st_tachometer, st_fuelflow};
+// st_r240to33 -     0 - 1000      proportional resistive sensor
+// st_thermistor -   0 - 1500      degrees C. in tenths
+// st_volts -        0 - 1023      ADC units 4.88 mV/per
+// st_thermocouple - 0 - 4000      0-1000 degrees C. in quarters
+// st_tachometer
+// st_fuelflow
 
 // for K style in deg. C, use a multiply of   4096  (0.25),                       offset 0
 // for K style in deg. F, use a multiplier of 7373  (0.25 * 1.8),                 offset -32

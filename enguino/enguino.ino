@@ -27,8 +27,7 @@ EthernetClient client;
 
 int readPin(int p);
 
-#define OPEN  -32767
-#define SHORT -32768
+#define FAULT -32768
 
 // Performance 'print' functions to ethernet 'client' (includes flush)
 #include "printEthernet.h"
@@ -36,53 +35,58 @@ int readPin(int p);
 // Implementation for printPrefix and pringGauge
 #include "printGauges.h"
 
-#include "printAux.h"
+// printLED functions for the auxiliary display
+#include "printLED.h"
 
 // Measure thermocouple tempertaures in the background
 #include "tcTemp.h"
 
 
 int readPin(int p) {
-#ifdef RANDOM_SENSORS
-
-  if (p < 16)
-    return rand() & 0x3ff;
-  if (p < 20)
-    return rand() & 0x3ff;
-  return rand() & 0x1ff;
-#else
-
-  if (p < 16)
-    return analogRead(p);
-  noInterrupts();
-  int t = tcTemp[p-16];
-  interrupts();
-   return t;
-#endif
+  if (p < 0)
+    return FAULT;
+    
+  #ifdef RANDOM_SENSORS
+  
+    if (p < 16)
+      return rand() & 0x3ff;        
+    if (p < 20)                     // CHT
+      return rand() & 0x1ff;
+    return rand() & 0x1ff + 1000;   // EGT 
+    
+  #else
+  
+    if (p < 16)
+      return analogRead(p);
+      
+    noInterrupts();
+    int t = tcTemp[p-16];
+    interrupts();
+    return t;
+     
+  #endif
 }
 
-
-
-
+void logTime(unsigned long start, const char *description) {
+  Serial.print(description);
+  Serial.print(' ');
+  Serial.print(int(millis()-start));
+  Serial.print("ms\n");
+}
 
 void serveUpWebPage(char url) {
-   unsigned long start = millis();         
-   switch(url) {  
-    case ' ':
+// unsigned long start = millis();         
+  switch(url) {  
+    case ' ':     // static webpage
       printPrefix();
+//    logTime(start, "Load page /");      
       break;
-    case 'd':    
+    case 'd':     // dynamic webpage   
       for (int i=0; i<N(gauges); i++)
         printGauge(gauges+i);
-      flush();
-      break;
-
+//   logTime(start, "Load page /d");      
+     break;
   }
-//  Serial.print("Load page /");
-//  Serial.print(url);
-//  Serial.print(' ');
-//  Serial.print(int(millis()-start));
-//  Serial.print("ms\n");
 }
 
 
@@ -90,65 +94,59 @@ void serveUpWebPage(char url) {
 void setup() {
 //  Serial.begin(9600);
 //  while (!Serial) 
-//    ; // wait for serial port to connect. Stops code until Serial Monitor is started. Good for debugging setup
+//    ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
 
   tcTempSetup();
   printLEDSetup();
   printLED(0,LED_TEXT(h,o,b,b));
-  printLED(1,readPin(0),0);   // replace this with a scaled sensor value
+  printLED(1,readPin(0),0);   // replace this with a value read from EEPROM
   delay(1000);    // replace this with LED self test sequence
 
   // start the Ethernet connection and the server:
   Ethernet.begin(mac, ip);
   server.begin();
-//  Serial.print("server is at ");
-//  Serial.println(Ethernet.localIP());
 }
 
 
 
 void loop() {
-  const char *request = "GET /";
    // listen for incoming clients
   client = server.available();
   if (client) {
     // an http request ends with a blank line
-    boolean currentLineIsBlank = true;
+    char lastToken = 0;
+    const char *request = "GET /";
     char *state = request;
     char url = ' ';
     while (client.connected()) {
       if (client.available()) {
-        char c = client.read();
-        if (c == '\r')
-          continue;
+        char token = client.read();
+        if (token == '\r')
+          continue;               // ignore '/r'
         if (*state == 0) {
-          url = c;
+          url = token;            // completed match of 'request', save webpage name
           state = request;
         }
           
-        // Need to look for GET /x, where x is the webpage being loaded (or ' ' for the main page) !!!! 
-        // ignore '/r', walk through string pointing to "GET /" called state, when *state == 0 then
-        // use the next character to figure out which web page to load.
-        // Serial.write(c);
-        // if you've gotten to the end of the line (received a newline
-        // character) and the line is blank, the http request has ended,
-        // so you can send a reply
-        if (c == '\n' && currentLineIsBlank) {
+        // two newlines in a row is the end of the request
+        if (token == '\n' && lastToken == '\n') {
           // send a standard http response header
-          client.println("HTTP/1.1 200 OK");
-          client.println("Content-Type: text/html");
-          client.println("Connection: close");  // the connection will be closed after completion of the response
-          // client.println("Refresh: 5");  // refresh the page automatically every 5 sec
-          client.println();
-          serveUpWebPage(url);   
+          print_P(F(
+            "HTTP/1.1 200 OK\n"
+            "Content-Type: text/html\n"
+            "Connection: close\n"     // the connection will be closed after completion of the response
+            "\n"
+          ));
+          serveUpWebPage(url);
+          flush();   
           break;
         }
-        if (c && c == *state)
-          *state ++;
+        if (token && token == *state)
+          *state ++;          // matches next character in a 'request', check next character
         else
-          state = request;
+          state = request;    // doesn't match next character, start from beginning
 
-        currentLineIsBlank = (c == '\n');
+        lastToken = token;
       }
     }
     // give the web browser time to receive the data

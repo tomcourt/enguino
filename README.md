@@ -22,6 +22,8 @@ The engine sensors themselves are fairly generic. The default configuration uses
 
 ## Software
 
+On the tablet, attach to the Stratux network, use the browser to navigate to 192.168.0.111, save the link to the home page. Go to the home screen and press the Enguino icon, the web page will open up in full screen.
+
 The firmware is installed on the Arduino using the Arduino IDE. First install the [Arduino IDE]. Add the Ethernet 2 libary **TBD** add detailed instructions. Then download the [Enguino source code]. Any configuration must be done before installing the firmware. Configuration involves editing the config.h file. After editing the configuration, connect the Arduino to your PC via a USB cable. This will also power up the Arduino and a green light will appear next to the USB connector. Start up the Arduino software on your PC. Go `File`, `Open` and select the file `enigno.ino`. Then go `Sketch` and `Upload`. The other green LED next to the power LED will flash until the file is uploaded. Done Uploading will appear near the bottom of the window.
 
 ## Configuration
@@ -71,11 +73,10 @@ Scroll to bottom and add
 
         net.ipv4.ip_forward=1
 
-
 Ctrl-o, enter, ctrl-x
 
 Reboot.  
-Connect to stratux network again.  
+Connect to Stratux wireless network again.  
 Browse to 192.168.10.1, confirm Stratux control panel shows up.  
 Browse to 192.168.0.111, confirm Engiuno panel shows up.
 
@@ -89,22 +90,22 @@ The supply is rated for 1000 ma. The Leonardo uses 82 mA. Testing will need to b
 
 **Leonardo Pins Mapping to ATmega 32U4**
 
-| Arduino | 32U4  | Use       |IRQ|Analog|Counter|
-|---------|-------|-----------|---|------|-------|
-| D0      | PD2   | Serial RX | * |      |       |
-| D1      | PD3   | Serial TX | * |      |       |
-| D2      | PD1   | SDA       | * |      |       |
-| D3      | PD0   | SCL/PWM   | * |      |       |
-| D4      | PD4   | TC Mux A0 |   |   *  |   *   |
-| D5      | PC6   | TC Mux A1 |   |      |       |
-| D6      | PD7   | TC Mux A2 |   |   *  |   *   |
-| D7      | PE6   | TC Mux EN | * |      |       |
-| D8      | PB4   | TC CS     |   |   *  |       |
-| D9      | PB5   | Analog 9  |   |   *  |       |
-| D10     | PB6   | Ether CS  |   |   *  |       |
-| D11     | PB7   | PWM       |   |      |       |
-| D12     | PD6   | TC MISO   |   |   *  |       |
-| D13     | PC7   | TC SCLK   |   |      |       ||
+| Arduino | 32U4  | Use         |IRQ|Analog|Counter|
+|---------|-------|-------------|---|------|-------|
+| D0      | PD2   | Serial RX   | * |      |       |
+| D1      | PD3   | Serial TX   | * |      |       |
+| D2      | PD1   | SDA         | * |      |       |
+| D3      | PD0   | SCL/PWM     | * |      |       |
+| D4      | PD4   | TC Mux A0   |   |   *  |   *   |
+| D5      | PC6   | TC Mux A1   |   |      |       |
+| D6      | PD7   | TC Mux A2   |   |   *  |   *   |
+| D7      | PE6   | TC Mux EN   | * |      |       |
+| D8      | PB4   | TC CS       |   |   *  |       |
+| D9      | PB5   | Analog 9    |   |   *  |       |
+| D10     | PB6   | Ether CS    |   |   *  |       |
+| D11     | PB7   | PWM         |   |      |       |
+| D12     | PD6   | TC MISO     |   |   *  |       |
+| D13     | PC7   | TC SCLK/LED |   |      |       ||
 
 The D6 and D12 pins support counters which would be useful for the tach and fuel flow. But the thermocouple board also conflicts with this.
 
@@ -124,9 +125,9 @@ The main webpage has a timer running in Javascript on the tablet that invokes a 
 
 ### Sensors
 
-The sensor system is fairly generic but currently only Van's Aircraft engine sensors have predefined configurations. The resistive sensors will have a 240 ohm(1%) pull up to Vcc. This will require up to 18 ma per sensor, or for the typical 5 sensors (fuel x 2, oil-p, oil-t, fuel-p) 90 ma total. This provides a good compromise between power usage, heat and loss of resolution. This provides 9 bits of resolution. To limit resistor heating to reasonable levels, .5 watt resistors should be used. Resistor temp. rise should be no more than 100 deg. C in free air. A resistance < 16 ohms will register as a short failure. > 480 ohms will register as an open failure. To convert from ADC units to ohms use this formula `ohms = 240 * (adc / (1024-adc))`.
+The sensor system is fairly generic but currently only Van's Aircraft engine sensors have predefined configurations. The resistive sensors will have a 240 ohm(1%) pull up to Vcc. This will require up to 18 ma per sensor, or for the typical 5 sensors (fuel x 2, oil-p, oil-t, fuel-p) 90 ma total. This provides a good compromise between power usage, heat and loss of resolution. This provides 9 bits of resolution. To limit resistor heating to reasonable levels, .5 watt resistors should be used. Resistor temp. rise should be no more than 100 deg. C in free air. A resistance < 16 ohms will register as a short failure. > 480 ohms will register as an open failure. To convert from ADC units to ohms use this formula `ohms = 240 * (adc / (1024-adc))`, this will require long divided by long division unfortunately or a lookup/interpolation table.
 
-All but the oil-temp sensor are 33.5-240 ohm sensors. The scale is as follow: zero=240, half=103, full=33.5 ohms. The oil temperature sensor (for a Rochester 3080-37) as follows (degF=ohms): 100=497, 150=179, 200=72, 250=34. This is a thermistor. Using a Steinhar-Hart calculator the conversion formula becomes `degrees Kelvin = 1 / (0.0016207535760566691 + 0.0002609330007304247 * log(R) + -1.0278556187396396e-7 * log(R)^3)`. A lookup table will certainly be required.
+All but the oil-temp sensor are 33.5-240 ohm sensors. These usually scale linearly by resistance. Some may scale closer to ADC counts as follow: zero=240ohm/511adc, half=103ohm/716adc, full=33.5ohm/898adc. The oil temperature sensor (for a Rochester 3080-37) as follows (degF=ohms): 100=497, 150=179, 200=72, 250=34. This is a thermistor. Using a Steinhar-Hart calculator the conversion formula becomes `degrees Kelvin = 1 / (0.0016207535760566691 + 0.0002609330007304247 * log(R) + -1.0278556187396396e-7 * log(R)^3)`. A lookup table will certainly be required.
 
 For resistive sensors still attached to the gauge, the gauge itself provides the pull up resistance and voltage. For Vans Aircraft engine instruments the pull up is 5 volts and the resistor is about 227 ohms(measured externally, internally the resistor appears to be 240 ohms, 5%). The pin can be directly connected if the voltage can't exceed Vcc by more than .5v. Otherwise a series resistor as discussed later could be attached to isolate the pin.
 
@@ -178,15 +179,21 @@ Other messages would include:
 To prevent having to re-acknowledge warnings there would be both temporal and range hysteresis built in.
 
 ### Parts list
-* Arduino Leonardo ETH ($46 amazon)
-* Thermocouple Multiplexer Shield ($50 electronics123)
-* Arduino Stackable Header Kit - R3 ($1.50 sparkfun)
-* Break Away Headers - Straight ($1.50 sparkfun)
-* More digikey parts - make above parts digikey as well
-* Note - stackable headers are Samtec SAM1206-#pins-ND, no workable shorter lengths available
+* --- Arduino Leonardo ETH - Digikey 1050-1007-ND
+* --- Thermocouple Multiplexer Shield ($50 electronics123)
+* Bicolor LED - Digikey 754-1232-ND
+* T 1 3/4 LED holder for panel - Digikey 67-1332-ND
+* 2 Adafruit 7 segment displays - Digikey 1528-1473-ND
+* 10 240 ohm 1% resistors - Digikey A121513CT-ND
+* 15K ohm 5% resistors - Digikey
+* 3K ohm 1% resistor - Digikey 3.01KXBK-ND
+* 1k ohm 1% resistor - Digikey 1.00KXBK-ND
+* 10 input screw terminal block - Digikey ED10567-ND
 * .025 square breakaway headers - Digikey 929647-04-35-ND - will probably work well on the thermocouple board w/o a header extension.
-* 500 ohm potentiometer - Digikey 987-1738-ND - used to simulate a resistive sensor to determine transfer function
-* Resistor decade/substitution box, ~$32 Amazon
+* jack for auxiliary display 6 pin - Digikey 455-2271-ND
+* header for auxiliary display 6 pin - Digikey 455-2218-ND
+* contacts for header x 10 - Digikey 455-1135-1-ND
+* pushbutton switch - Digikey EG2015-ND
 * K style thermocouple wire, 24-26 gauge, EBay
 
 ### Future stuff
@@ -194,9 +201,10 @@ To prevent having to re-acknowledge warnings there would be both temporal and ra
 * The Arduino Yun would support airplanes lacking a Stratux. The code would need to use the 'bridge' objects instead of the ethernet objects. Use #ifdef AVR_YUN to flex the code.
 * Themes - a dark theme could be created easily enough by adjusting the styles. A larger text theme for the gauges would involve more defines and stringizing them for the SVG.
 * Warning lights instead of auxillary display? A board with 4 caution/warning LEDs (red/green common cathode [bicolor LED]). Turning red and green on produces yellow. Alternatively use a module like the [BOB-13884] to provide 3 RGB LED's.
+* Use digitalFastWrite for smaller code - https://github.com/NicksonYap/digitalWriteFast
+* Create mult16x16to32 function for smaller code - https://github.com/rekka/avrmultiplication
 
 
-### To be added
 [open source]:https://en.wikipedia.org/wiki/Open-source_model
 [Stratux]:http://stratux.me
 [example]:http://www.tcourt.net/efis
@@ -210,4 +218,3 @@ To prevent having to re-acknowledge warnings there would be both temporal and ra
 [BOB-13884]:https://www.sparkfun.com/products/13884
 [7 segment LED displays]:https://www.adafruit.com/product/878
 [14 segment LED display]:https://www.adafruit.com/product/1911
-[Enguino source code]

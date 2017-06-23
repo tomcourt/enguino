@@ -71,11 +71,9 @@ SIGNAL(TIMER0_COMPA_vect)
     
     int tempC = rawTC / 4;
     if (rawTC & 1) {
-      if (rawIT & 1)
-        tempC = OPEN;
-      if (rawIT & 6)
-        tempC = SHORT;
-    }
+      if (rawIT & 7)
+        tempC = FAULT;
+     }
     tcTemp[ch] = tempC;
 
     if (++ch == 8) {

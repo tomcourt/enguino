@@ -59,15 +59,11 @@ void print(int n, int decimal) {
   buf[6] = 0;
   char *cp = buf + 6;
   if (n < 0) {
-    if (n == OPEN) {
-      print("open");
+    if (n == FAULT) {
+      print("inop");
       return;
     }
-   if (n == SHORT) {
-      print("shrt");
-      return;
-    }
-      
+       
     print('-');
     n = -n;
   }

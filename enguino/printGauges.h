@@ -10,7 +10,7 @@ int scaleMark(const Sensor *s, int val) {
 }
 
 int scaleValue(const Sensor *s, int val) {
-  if (val == SHORT || val == OPEN)
+  if (val == FAULT)
     return val;
   return (int)(((long)s->vfactor * (long)val) >> divisor) + s->voffset;
 }
@@ -26,7 +26,7 @@ void printVertical(const Gauge *g, bool showLabels) {
   int mark = scaleMark(g->sensor, val) << 2;
   
   const char *color = 0;
-  
+   
   // fill in the color regions of the gauage
   int s = 0; // start at bottom and work up
   for (int i=0; i<g->n_regions; i++) {
@@ -69,6 +69,8 @@ void printVertical(const Gauge *g, bool showLabels) {
   print_P(F("<text x='600' y='5900' class='unit'>"));
   print_text_close(g->units);
   
+  if (val == FAULT)
+    color = yellow;
   if (color != 0 && color != green) {
     print_P(F("<rect x='100' y='5175' width='1000' height='500' rx='90' ry='90' fill='"));
     print(color);
@@ -78,9 +80,11 @@ void printVertical(const Gauge *g, bool showLabels) {
   print_P(F("<text x='600' y='5600' class='value'>"));
   print(scaleValue(g->sensor, val), g->decimal);
   print_text_close();
-  
-  print_P(F("<use xlink:href='#vmark' x='600' y='"));
-  print_n_close(4000 + 1100 - mark);
+
+  if (val != FAULT) {
+    print_P(F("<use xlink:href='#vmark' x='600' y='"));
+    print_n_close(4000 + 1100 - mark);
+  }
 }
 
 
@@ -99,7 +103,7 @@ void printHorizontal(const Gauge *g, int count) {
     int mark = scaleMark(g->sensor, val) << 3;
     
     const char *color = 0;
-    
+     
     // fill in the color regions of the gauage
     int s = 0; // start at left and work right
     for (int i=0; i<g->n_regions; i++) {
@@ -117,26 +121,29 @@ void printHorizontal(const Gauge *g, int count) {
       print_n_close(e-s);
       
       s = e;
-    }
+   }
     
-    if (color != 0 && color != green) {
+   if (val == FAULT)
+      color = yellow;
+   if (color != 0 && color != green) {
       print_P(F("<rect x='0' y='"));
       print(offset+550);
       print_P(F("' width='1000' height='500' rx='90' ry='90' fill='"));
       print(color);
       print_n_close();
     }
-
     print_P(F("<text x='500' y='"));
     print(offset+800);
     print_P(F("' class='value' alignment-baseline='central'>"));
     print(scaleValue(g->sensor, val), g->decimal);
     print_text_close();
-    
-    print_P(F("<use xlink:href='#hmark' y='"));
-    print(offset+800);
-    print_P(F("' x='"));
-    print_n_close(1100 + mark);
+
+    if (val != FAULT) {
+      print_P(F("<use xlink:href='#hmark' y='"));
+      print(offset+800);
+      print_P(F("' x='"));
+      print_n_close(1100 + mark);
+    }
     offset += 800;
   }
   
@@ -170,16 +177,23 @@ void printAuxHoriz(const Gauge *g, int count) {
     int val = readPin(g->pin + n);
     int mark = scaleMark(g->sensor, val) << 3;
     
+   if (val == FAULT) {
+      print_P(F("<rect x='9200' y='"));
+      print(offset+550);
+      print_P(F("' width='1000' height='500' rx='90' ry='90' fill='yellow'/>"));
+    }
     print_P(F("<text x='9700' y='"));
     print(offset + 800);
     print_P(F("' class='value' alignment-baseline='central'>"));
     print(scaleValue(g->sensor, val), g->decimal);
     print_text_close();
-    
-    print_P(F("<use xlink:href='#xmark' y='"));
-    print(offset + 800);
-    print_P(F("' x='"));
-    print_n_close(1100 + mark);
+
+    if (val != FAULT) {
+      print_P(F("<use xlink:href='#xmark' y='"));
+      print(offset + 800);
+      print_P(F("' x='"));
+      print_n_close(1100 + mark);
+    }
     offset += 800;
   }
   
@@ -269,18 +283,19 @@ void printRound(const Gauge *g) {
   int scale = scaleValue(g->sensor, val);
 
   // hard coded for tachometer
-  if (g->pin == 6) {
-    const char *color = 0;
+  const char *color = 0;
+  if (val == FAULT)
+    color = yellow;
+  else if (g->sensor->type == st_tachometer) {
     if (scale < 500)
       color = yellow;
     if (scale > 2700)
-      color = red;
-  
-    if (color) {
-      print_P(F("<rect x='-500' y='-80' width='1000' height='500' rx='90' ry='90' fill='"));
-      print(color);
-      print_n_close();
-    }
+      color = red;  
+  }
+  if (color) {
+    print_P(F("<rect x='-500' y='-80' width='1000' height='500' rx='90' ry='90' fill='"));
+    print(color);
+    print_n_close();
   }
 
   print_P(F("<text x='0' y='350' class='value'>"));
@@ -289,10 +304,12 @@ void printRound(const Gauge *g) {
   
   print_P(F("<text x='0' y='700' class='unit'>"));
   print_text_close(g->units);
-  
-  print_P(F("<use xlink:href='#vmark' x='-1300' y='0' transform='rotate("));
-  print(mark-300,1);
-  print_P(F(")'/>\n"));
+
+  if (val != FAULT) {
+    print_P(F("<use xlink:href='#vmark' x='-1300' y='0' transform='rotate("));
+    print(mark-300,1);
+    print_P(F(")'/>\n"));
+  }
   print_g_close();
 }
 
@@ -376,5 +393,4 @@ void printPrefix() {
     "</body>\n"
   "</html>\n"
   ));
-  flush();
 }

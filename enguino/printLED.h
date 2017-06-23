@@ -1,8 +1,9 @@
 // lookup port mapping to pins here: https://www.arduino.cc/en/Reference/PortManipulation
-#define SCL_PIN 2 
-#define SCL_PORT PORTD 
+#define SCL_PIN 7 
+#define SCL_PORT PORTB 
 #define SDA_PIN 0 
-#define SDA_PORT PORTC 
+#define SDA_PORT PORTD
+#define I2C_TIMEOUT 10 
 #include "SoftI2CMaster.h"
 
 #define HT16K33_OSCILATOR_ON 0x21
@@ -25,7 +26,7 @@
 
 static const byte digittable[] = { 2, 4, 8, 10 };    // skip the colon 
 
-// segments are aranged as follows
+// segments are aranged as follows (values are hexadecimal)
 // +---  1 ---+
 // |          |
 // 20         2
@@ -55,13 +56,20 @@ static const byte digittable[] = { 2, 4, 8, 10 };    // skip the colon
 
 #define LED_A 0x77
 #define LED_b 0x7c
-#define LED_E 0x73
+#define LED_C 0x39
+#define LED_D 0x5e
+#define LED_E 0x79
+#define LED_F 0x71
+#define LED_H 0x76
 #define LED_h 0x74
+#define LED_i 0x4
+#define LED_L 0x38
 #define LED_n 0x54
 #define LED_o 0x5c
 #define LED_P 0x73
 #define LED_r 0x50
 #define LED_t 0x78
+#define LED_U 0x3e
 
 static const byte numbertable[] = { LED_0, LED_1, LED_2, LED_3, LED_4, LED_5, LED_6, LED_7, LED_8, LED_9 };
 
@@ -96,7 +104,7 @@ void printLEDRawDigits(byte offset, word val) {
 }
 
 void printLEDRawHalfDigits(byte offset, word number) {
-  if (number == SHORT || number == OPEN) {
+  if (number == FAULT) {
     ledBuffer[digittable[offset-1]] = LED__;
     ledBuffer[digittable[offset-2]] = LED__;
   } 
@@ -157,8 +165,8 @@ void printLEDFuel(int left, int right) {
 
 // print the 'number' to 'line' 0 or 1, place a decimal point 'decimal' digits to the left
 void printLED(byte line, int number, byte decimal) {
-  if (number == SHORT || number == OPEN) {
-    printLED(line, LED_TEXT(_,_,_,_));
+  if (number == FAULT) {
+    printLED(line, LED_TEXT(i,n,o,P));
   } 
   else {
     if (number < 0)
