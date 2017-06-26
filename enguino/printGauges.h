@@ -1,7 +1,7 @@
 /// Implementation for printPrefix and pringGauge
 
 int scaleMark(const Sensor *s, int val) {
-  int mark = (int)(((long)s->mfactor * (long)val) >> divisor) + s->moffset;
+  int mark = int(multiply(s->mfactor, val+s->moffset) >> divisor);
   if (mark < 0)
     mark = 0;
   if (mark > 1000)
@@ -12,7 +12,7 @@ int scaleMark(const Sensor *s, int val) {
 int scaleValue(const Sensor *s, int val) {
   if (val == FAULT)
     return val;
-  return (int)(((long)s->vfactor * (long)val) >> divisor) + s->voffset;
+  return int(multiply(s->vfactor,val) >> divisor) + s->voffset;
 }
 
 // vertical gauge is
@@ -22,7 +22,7 @@ void printVertical(const Gauge *g, bool showLabels) {
   // starts at 1100, 4000 high
   print_P(F("<rect x='400' y='1100' width='400' height='4000' class='rectgauge'/>\n"));
   
-  int val = readPin(g->pin);
+  int val = readGauge(g);
   int mark = scaleMark(g->sensor, val) << 2;
   
   const char *color = 0;
@@ -99,7 +99,7 @@ void printHorizontal(const Gauge *g, int count) {
     print(600+offset);
     print_P(F("' width='8000' height='400' class='rectgauge'/>\n"));
     
-    int val = readPin(g->pin + n);
+    int val = readGauge(g, n);
     int mark = scaleMark(g->sensor, val) << 3;
     
     const char *color = 0;
@@ -174,10 +174,10 @@ void printAuxHoriz(const Gauge *g, int count) {
   // starts at ..., 8000 wide
   int offset = 0;
   for (int n=0; n<count; n++) {
-    int val = readPin(g->pin + n);
+    int val = readGauge(g, n);
     int mark = scaleMark(g->sensor, val) << 3;
-    
-   if (val == FAULT) {
+       
+    if (val == FAULT) {
       print_P(F("<rect x='9200' y='"));
       print(offset+550);
       print_P(F("' width='1000' height='500' rx='90' ry='90' fill='yellow'/>"));
@@ -277,7 +277,7 @@ void printRound(const Gauge *g) {
   print_P(F("<text x='0' y='5900' 700='unit'>"));
   print_text_close(g->units);
   
-  int val = readPin(g->pin);
+  int val = readGauge(g);
   int mark = (scaleMark(g->sensor, val) * 24) / 10;
 
   int scale = scaleValue(g->sensor, val);

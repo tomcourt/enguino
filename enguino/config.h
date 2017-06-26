@@ -8,7 +8,10 @@ const char *red = "red";
 #define MX(x)       (int)((x)*(1<<divisor) + 0.5)
 #define GMX(range)  (int)(1000.0 / (range) * (1<<divisor) + 0.5)
 #define GB(low)     (int)(-((low) + 0.5))  
-#define ADCtoV  (5.0/1023.0)    // multiply this by divider to get DC volts
+#define ADCtoDivV   (5.0/1023.0)      // multiply this by adc input to get DC volts
+#define ADCtoV10    (57 * ADCtoDivV)  // Using 1:5.7 divider for now !!!      
+#define V10toADC    (1/(57 * ADCtoDivV))  // Using 1:5.7 divider for now !!!   
+
 
 const int thermistorADC[]  = {};
 const int thermistorC10[]  = {};
@@ -25,14 +28,14 @@ const int resist240p1000[] = {};
 // Use GB() and GMX to set the graphs b and m values based on lowest input and input range (hi-low) respectively. 
 //
 const Sensor opS = {    st_r240to33,       0,       MX(0.1),                    0,  MX(1.0)};     // 0 - 100
-const Sensor otS = {    st_r240to33,      50,       MX(0.2),                    0,  MX(1.0)};     // 50 - 250
-const Sensor vtS = {    st_volts,          0, MX(ADCtoV*40),                    0,  8008};        // 100 - 160   (10 - 16)
+const Sensor otS = {    st_thermistor,    32,    MX(1.8*.1), GB((50-32)*5./9.*10),  GMX(200*10*5./9.)};     // 50 - 250
+const Sensor vtS = {    st_volts,          0,  MX(ADCtoV10),     GB(100*V10toADC),  GMX(60*V10toADC)};        // 100 - 160   (10 - 16)
 const Sensor fpS = {    st_r240to33,       0,       MX(0.1),                    0,  MX(1.0)};     // 0 - 100     (0 - 10)
 const Sensor flS = {    st_r240to33,       0,      MX(0.16),                    0,  MX(1.0)};     // 0 - 160     (0 - 16)
 const Sensor taS = {    st_tachometer,     0,         12000,                    0,  8008 };       // 0 - 3000 
 const Sensor maS = {    st_volts,        100,          2000,                    0,  8008};        // 100 - 350   (10 - 35)
-const Sensor chS = {    st_thermocouple,  32,     MX(1.8/4),  GB((100-32)*5./9.*4), GMX(400*5./9.*4)}; // 100 - 500,  input is .25 C, convert to whole F   
-const Sensor egS = {    st_thermocouple,  32,     MX(1.8/4), GB((1000-32)*5./9.*4), GMX(600*5./9.*4)}; // 1000 - 1600,input is .25 C, convert to to whole F
+const Sensor chS = {    st_k_type_tc,     32,     MX(1.8/4),  GB((100-32)*5./9.*4), GMX(400*5./9.*4)}; // 100 - 500,  input is .25 C, convert to whole F   
+const Sensor egS = {    st_k_type_tc,     32,     MX(1.8/4), GB((1000-32)*5./9.*4), GMX(600*5./9.*4)}; // 1000 - 1600,input is .25 C, convert to to whole F
 
 // Labels
 // ------
@@ -79,9 +82,9 @@ int    chRP[] = { 1000,   6000,   7940,   8000    };
 #define bank 3500   // bank of misc vertical gauges
 const Gauge gauges[] = {
   //  x,      y,  style,  decimal,  label1, label2, units,  labVal, labPt,num,    regClr, regPt, num,    sensor,  pin
-  {bank+0,    0,  gs_vert,  0,    "OIL",  "PRES", "psi",    opLV,   opLP, N(opLV),  opRC, opRP, N(opRC),  &opS,   0},
-  {bank+1750, 0,  gs_vert,  0,    "OIL",  "TEMP", "&deg;F", otLV,   otLP, N(otLV),  otRC, otRP, N(otRC),  &otS,   1},
-  {bank+3500, 0,  gs_vert,  1,    "",     "VOLT", "volt",   vtLV,   vtLP, N(vtLV),  vtRC, vtRP, N(vtRC),  &vtS,   2},
+  {bank+0,    0,  gs_vert,  0,    "OIL",  "PRES", "psi",    opLV,   opLP, N(opLV),  opRC, opRP, N(opRC),  &opS,   1},
+  {bank+1750, 0,  gs_vert,  0,    "OIL",  "TEMP", "&deg;F", otLV,   otLP, N(otLV),  otRC, otRP, N(otRC),  &otS,   2},
+  {bank+3500, 0,  gs_vert,  1,    "",     "VOLT", "volt",   vtLV,   vtLP, N(vtLV),  vtRC, vtRP, N(vtRC),  &vtS,   0},
   {bank+5250, 0,  gs_vert,  1,    "FUEL", "PRES", "psi",    fpLV,   fpLP, N(fpLV),  fpRC, fpRP, N(fpRC),  &fpS,   3},
   {bank+7000, 0,  gs_pair,  1,    "FUEL", "",     "gal",    flLV,   flLP, N(flLV),  flRC, flRP, N(flRC),  &flS,   4}, // pins 4 and 5
   {100,       0,  gs_round, 0,    "TACH", "",     "rpm",    0,      0,    0,        taRC, taRP, N(taRC),  &taS,   -1},

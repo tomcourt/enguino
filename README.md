@@ -84,7 +84,7 @@ Browse to 192.168.0.111, confirm Engiuno panel shows up.
 
 ### Arduino
 
-The Leonardo is rated to run from 6-20 volts although they suggest keeping it between 7-12 volts. They claim to worry about the voltage regulator overheating and 'damaging the board', but the regulator chip (88% efficient) does have a thermal shutdown feature at 150 deg C. The text appears to be a carry over from previous Arduino's which used a linear supply. **TBD** if heating is a problem. **TBD** if voltage sag during starting is a problem.
+The Leonardo is rated to run from 6-20 volts although they suggest keeping it between 7-12 volts. They claim to worry about the voltage regulator overheating and 'damaging the board', but the regulator chip (88% efficient) does have a thermal shutdown feature at 150 deg C. The text appears to be a carry over from previous Arduino's which used a linear supply. Typical power draw is 70mA for Arduino, no more than 90mA for pull ups, TBD for auxiliary display. **TBD** if heating is a problem. **TBD** if voltage sag during starting is a problem.
 
 The supply is rated for 1000 ma. The Leonardo uses 82 mA. Testing will need to be done to determine actual power used.
 
@@ -125,17 +125,17 @@ The main webpage has a timer running in Javascript on the tablet that invokes a 
 
 ### Sensors
 
-The sensor system is fairly generic but currently only Van's Aircraft engine sensors have predefined configurations. The resistive sensors will have a 240 ohm(1%) pull up to Vcc. This will require up to 18 ma per sensor, or for the typical 5 sensors (fuel x 2, oil-p, oil-t, fuel-p) 90 ma total. This provides a good compromise between power usage, heat and loss of resolution. This provides 9 bits of resolution. To limit resistor heating to reasonable levels, .5 watt resistors should be used. Resistor temp. rise should be no more than 100 deg. C in free air. A resistance < 16 ohms will register as a short failure. > 480 ohms will register as an open failure. To convert from ADC units to ohms use this formula `ohms = 240 * (adc / (1024-adc))`, this will require long divided by long division unfortunately or a lookup/interpolation table.
+The sensor system is fairly generic but currently only Van's Aircraft engine sensors have predefined configurations. The resistive sensors will have a 240 ohm(1%) pull up to +5V. This will require up to 18 ma per sensor, or for the typical 5 sensors (fuel x 2, oil-p, oil-t, fuel-p) 90 ma total. This provides a good compromise between power usage, heat and loss of resolution. This provides 9 bits of resolution. To limit resistor heating to reasonable levels, .5 watt resistors should be used. Resistor temp. rise should be no more than 100 deg. C in free air. A resistance significantly out of range will mark the sensor inoperative. To convert from ADC units to ohms use this formula `ohms = 240 * (adc / (1024-adc))`, this will require long divided by long division unfortunately or a lookup/interpolation table.
 
-All but the oil-temp sensor are 33.5-240 ohm sensors. These usually scale linearly by resistance. Some may scale closer to ADC counts as follow: zero=240ohm/511adc, half=103ohm/716adc, full=33.5ohm/898adc. The oil temperature sensor (for a Rochester 3080-37) as follows (degF=ohms): 100=497, 150=179, 200=72, 250=34. This is a thermistor. Using a Steinhar-Hart calculator the conversion formula becomes `degrees Kelvin = 1 / (0.0016207535760566691 + 0.0002609330007304247 * log(R) + -1.0278556187396396e-7 * log(R)^3)`. A lookup table will certainly be required.
+All but the oil-temp sensor are 240-33.5 ohm sensors. These usually scale linearly by resistance. For those that don't, a custom interpolation table may be required. The oil temperature sensor (for a Rochester 3080-37) as follows (degF=ohms): 100=497, 150=179, 200=72, 250=34. This is a thermistor. Using a Steinhar-Hart calculator the conversion formula becomes `degrees Kelvin = 1 / (0.0016207535760566691 + 0.0002609330007304247 * log(R) + -1.0278556187396396e-7 * log(R)^3)`. An interpolation table is used to convert this.
 
-For resistive sensors still attached to the gauge, the gauge itself provides the pull up resistance and voltage. For Vans Aircraft engine instruments the pull up is 5 volts and the resistor is about 227 ohms(measured externally, internally the resistor appears to be 240 ohms, 5%). The pin can be directly connected if the voltage can't exceed Vcc by more than .5v. Otherwise a series resistor as discussed later could be attached to isolate the pin.
+For resistive sensors still attached to the gauge, the gauge itself provides the pull up resistance and voltage. For Vans Aircraft engine instruments the pull up is 5 volts and the resistor is about 227 ohms(measured externally, internally the resistor appears to be 240 ohms, 5%). The pin can be directly connected if the voltage can't exceed Vcc by more than .5v. Otherwise a 15K series resistor could be attached to help isolate the pin.
 
 For thermocouple sensors the board will detect both open and short. It directly reads out in degrees C (.25 resolution). This will optionally be converted to F. To support J style thermocouples, the C output will be adjusted by taking the thermocouple reading (before the CJT adjustment) `newC = oldC * 46677 / 65536`
 
 For the voltage sensor a 4:1 voltage divider consisting of a 1k and 3.01k (1%) resistor is used. This limits the draw to .1 watt at 20 volts or .05 at 14 volts.
 
-Typical sensors are Stewart Warner. The tachometer is supplied with 12 volts, a hall effect sensor that returns 5 volt pulses, 8/16 PPR, TBD. The manifold pressure sensor is believed to be 0-100mV ratio-metric.
+Typical sensors are Stewart Warner. The tachometer is supplied with 12 volts, a hall effect sensor that returns 5 volt pulses, 8/16 PPR, TBD. The manifold pressure sensor is believed to be 0-100mV ratio-metric. Either a better ADC (Adafruit ADS1015) will be needed or a new manifold pressure sensor.
 
 For a sensor that might contain a voltage higher than Vcc using a voltage divider as used on the voltage sensor will cause a significant load which could create issues if still attached to a backup gauge. Alternatively a 15K ohm resistor between the sensor and the pin will safely clip voltages between 20.5 and -15.5 volts. The goal here is to limit the internal clamping diodes to no more than 1ma after the .7 volt diode drop.
 
@@ -173,8 +173,7 @@ Other messages would include:
 * `Ot`
 * `FP`
 * `Cht`
-* `Shrt`  short circuit, shown on second line
-* `OPEn`  open circuit, shown on second line
+* `inoP`  open or short circuit, shown on second line
 
 To prevent having to re-acknowledge warnings there would be both temporal and range hysteresis built in.
 
@@ -189,18 +188,21 @@ To prevent having to re-acknowledge warnings there would be both temporal and ra
 * 3K ohm 1% resistor - Digikey 3.01KXBK-ND
 * 1k ohm 1% resistor - Digikey 1.00KXBK-ND
 * 10 input screw terminal block - Digikey ED10567-ND
-* .025 square breakaway headers - Digikey 929647-04-35-ND - will probably work well on the thermocouple board w/o a header extension.
+* .025 square breakaway headers - Digikey 929834-04-36-ND (tin) or 929647-04-36-ND (gold) - will probably work well on the thermocouple board w/o a header extension.
 * jack for auxiliary display 6 pin - Digikey 455-2271-ND
 * header for auxiliary display 6 pin - Digikey 455-2218-ND
 * contacts for header x 10 - Digikey 455-1135-1-ND
 * pushbutton switch - Digikey EG2015-ND
 * K style thermocouple wire, 24-26 gauge, EBay
+* Bigger filter caps?, thermocouples Digikey 1276-1246-1-ND
+* Enclosure - Electrical box - B108R - Home Depot
 
 ### Future stuff
 * It may be possible to support 2 thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a thermistor. Only 8 bits are usable with 40x. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably double it again.
 * The Arduino Yun would support airplanes lacking a Stratux. The code would need to use the 'bridge' objects instead of the ethernet objects. Use #ifdef AVR_YUN to flex the code.
 * Themes - a dark theme could be created easily enough by adjusting the styles. A larger text theme for the gauges would involve more defines and stringizing them for the SVG.
 * Warning lights instead of auxillary display? A board with 4 caution/warning LEDs (red/green common cathode [bicolor LED]). Turning red and green on produces yellow. Alternatively use a module like the [BOB-13884] to provide 3 RGB LED's.
+* Create another TCP or UDP port that can be read from the Stratux (perhaps with netcat). This would be a comma separated text stream of engine data to be logged.
 * Use digitalFastWrite for smaller code - https://github.com/NicksonYap/digitalWriteFast
 * Create mult16x16to32 function for smaller code - https://github.com/rekka/avrmultiplication
 
