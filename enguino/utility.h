@@ -1,3 +1,9 @@
+// compile time sin() and cos() for calculating round gauges position in an x, y plane
+// https://github.com/pkhuong/polynomial-approximation-catalogue/tree/master/double
+#define SIN(x)  ( (x) + -0.166656810730001*(x)*(x)*(x) + 0.008312366210465815*(x)*(x)*(x)*(x)*(x) + -1.8492181558254177e-4*(x)*(x)*(x)*(x)*(x)*(x)*(x) )
+#define COS(x)  ( 1.0 + -0.4999356307314411*(x)*(x) + 0.04150706685139252*(x)*(x)*(x)*(x) + -0.0012757519849685426*(x)*(x)*(x)*(x)*(x)*(x)             )
+
+
 void logTime(unsigned long start, const char *description) {
   Serial.print(description);
   Serial.print(' ');
@@ -61,6 +67,11 @@ long multiply(int a, int b) {
   // return (long(a) * long(b);
 }
 
+int multiplyAndScale(int a, int b, byte shift) {
+  return int(multiply(a, b) >> shift);
+}
+
+// interpolate values using table, returns FAULT instead of extrapolating
 int interpolate(const InterpolateTable *table, int value) {
   int x = table->start;
   if (value < x)
@@ -80,6 +91,17 @@ int interpolate(const InterpolateTable *table, int value) {
     x = x1;
     diff++;
     result++;
+  }
+}
+
+// sort a small list using insertion sort O(n^2) worst case
+void sort(byte n, int *list) {
+  for (byte i=1; i<n; i++) {
+    for (byte j=i; j>0 && list[j-1] > list[j]; j--) {
+      int t = list[j];
+      list[j] = list[j-1];
+      list[j-1] = t;
+    }
   }
 }
 

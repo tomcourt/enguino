@@ -8,7 +8,7 @@ Enguino is intended to work with the [Stratux] ADS-B receiver which is also open
 
 The hardware consists of a tiny single board computer called an [Arduino]. This board is similar to the Raspberry Pi used in the Stratux, although the Arduino has a much simpler computer on it. Despite being a simple computer, the Arduino is much better at connecting to the real world.
 
-Because Enguino is experimental, it is recommended that you don't replace your legally required gauges with Enguino. Also tablets and and wifi communication alone shouldn't be counted upon for critical flight information. Furthermore you may not have a dedicated tablet for Enguino. For these reasons an auxiliary display is an optional part of Enguino. It consists of a simple LED display that normally displays tachometer and fuel gauges but can also display engine alerts and warnings.
+Because Enguino is experimental, it is recommended that you don't replace your legally required gauges with Enguino until you've confirmed yourself that its readings are accurate and reliable. Also tablets and and wifi communication alone shouldn't be counted upon for critical flight information. Furthermore you may not have a dedicated tablet for Enguino. For these reasons an auxiliary display is an optional part of Enguino. It consists of a simple LED display that normally displays tachometer and fuel gauges but can also display engine alerts and warnings.
 
 ## Hardware
 
@@ -28,6 +28,8 @@ The firmware is installed on the Arduino using the Arduino IDE. First install th
 
 ## Configuration
 
+Due to hardware limitations all calculations are done using integers. A decimal point is assumed during the calcuation and added when numbers are displayed.
+
 ### Sensors
 
 ### Layout
@@ -38,7 +40,7 @@ During design and testing of the layout it may be helpful to connect the Enguino
 Setting the ranges of the gauges (green, yellow, red regions) will require updating a spreadsheet and then pasting the values into a file. Details are **TBD**.
 
 ## Stratux
-The Stratux has to be configured to route network traffic between the wired ethernet to the Enguino and the wifi connecting to a tablet. Note - these instructions are for Stratux v0.8r2, newer versions may require modification.
+The Stratux is configured to route network traffic between the wired ethernet to the Enguino and the wifi connecting to a tablet. Note - these instructions are for Stratux v0.8r2, newer versions may require modification.
 
 * Boot the Stratux. For first boot, wait 3 minutes, for rebooting wait 30 seconds.
 * Either connect a monitor and keyboard to the Rapberry Pi and login with un: `pi`, pw: `raspberry` then skip ahead in these instructions to sudo nano...
@@ -84,9 +86,9 @@ Browse to 192.168.0.111, confirm Engiuno panel shows up.
 
 ### Arduino
 
-The Leonardo is rated to run from 6-20 volts although they suggest keeping it between 7-12 volts. They claim to worry about the voltage regulator overheating and 'damaging the board', but the regulator chip (88% efficient) does have a thermal shutdown feature at 150 deg C. The text appears to be a carry over from previous Arduino's which used a linear supply. Typical power draw is 70mA for Arduino, no more than 90mA for pull ups, TBD for auxiliary display. **TBD** if heating is a problem. **TBD** if voltage sag during starting is a problem.
+The Leonardo is rated to run from 6-20 volts although they suggest keeping it between 7-12 volts. They claim to worry about the voltage regulator overheating and 'damaging the board', but the regulator chip (88% efficient) does have a thermal shutdown feature at 150 deg C. The text appears to be a carry over from previous Arduino's which used a linear supply.  **TBD** if voltage sag during starting is a problem.
 
-The supply is rated for 1000 ma. The Leonardo uses 82 mA. Testing will need to be done to determine actual power used.
+The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing).
 
 **Leonardo Pins Mapping to ATmega 32U4**
 
@@ -127,11 +129,11 @@ The main webpage has a timer running in Javascript on the tablet that invokes a 
 
 The sensor system is fairly generic but currently only Van's Aircraft engine sensors have predefined configurations. The resistive sensors will have a 240 ohm(1%) pull up to +5V. This will require up to 18 ma per sensor, or for the typical 5 sensors (fuel x 2, oil-p, oil-t, fuel-p) 90 ma total. This provides a good compromise between power usage, heat and loss of resolution. This provides 9 bits of resolution. To limit resistor heating to reasonable levels, .5 watt resistors should be used. Resistor temp. rise should be no more than 100 deg. C in free air. A resistance significantly out of range will mark the sensor inoperative. To convert from ADC units to ohms use this formula `ohms = 240 * (adc / (1024-adc))`, this will require long divided by long division unfortunately or a lookup/interpolation table.
 
-All but the oil-temp sensor are 240-33.5 ohm sensors. These usually scale linearly by resistance. For those that don't, a custom interpolation table may be required. The oil temperature sensor (for a Rochester 3080-37) as follows (degF=ohms): 100=497, 150=179, 200=72, 250=34. This is a thermistor. Using a Steinhar-Hart calculator the conversion formula becomes `degrees Kelvin = 1 / (0.0016207535760566691 + 0.0002609330007304247 * log(R) + -1.0278556187396396e-7 * log(R)^3)`. An interpolation table is used to convert this.
+Many of the sensors are 240-33.5 ohm sensors. These usually scale linearly by resistance. For those that don't, a custom interpolation table may be required. The oil temperature sensor (for a Rochester 3080-37) as follows (degF=ohms): 100=497, 150=179, 200=72, 250=34. This is a thermistor. Westach has different values: http://www.acro.co.uk/html/westach_calibration.htm Using a Steinhar-Hart calculator the conversion formula becomes `degrees Kelvin = 1 / (0.0016207535760566691 + 0.0002609330007304247 * log(R) + -1.0278556187396396e-7 * log(R)^3)`. An interpolation table is used to convert this.
 
 For resistive sensors still attached to the gauge, the gauge itself provides the pull up resistance and voltage. For Vans Aircraft engine instruments the pull up is 5 volts and the resistor is about 227 ohms(measured externally, internally the resistor appears to be 240 ohms, 5%). The pin can be directly connected if the voltage can't exceed Vcc by more than .5v. Otherwise a 15K series resistor could be attached to help isolate the pin.
 
-For thermocouple sensors the board will detect both open and short. It directly reads out in degrees C (.25 resolution). This will optionally be converted to F. To support J style thermocouples, the C output will be adjusted by taking the thermocouple reading (before the CJT adjustment) `newC = oldC * 46677 / 65536`
+For thermocouple sensors the board will detect both open and short. It directly reads out in degrees C (.25 resolution). This will optionally be converted to F. To support J style thermocouples, the C output will be adjusted by taking the thermocouple reading (before the CJT adjustment) `newC = oldC * 25599 / 32768`
 
 For the voltage sensor a 4:1 voltage divider consisting of a 1k and 3.01k (1%) resistor is used. This limits the draw to .1 watt at 20 volts or .05 at 14 volts.
 
@@ -139,11 +141,13 @@ Typical sensors are Stewart Warner. The tachometer is supplied with 12 volts, a 
 
 For a sensor that might contain a voltage higher than Vcc using a voltage divider as used on the voltage sensor will cause a significant load which could create issues if still attached to a backup gauge. Alternatively a 15K ohm resistor between the sensor and the pin will safely clip voltages between 20.5 and -15.5 volts. The goal here is to limit the internal clamping diodes to no more than 1ma after the .7 volt diode drop.
 
+The tachometer measures RPM by recording the uS time whenever the pin has a rising edge. RPM = 60,000,000 / (time - last_time). The division may be replaced by an interpolation table. The time is only accurate to 4 uS so it could be pre-divided by 4. Other interrupt functions (thermocouple and time keeping) will cause occasional jitter. Collecting 4 samples, throwing out the highest and lowest and averaging the last 2 should fix that.
+
 ### Auxiliary Display
 
 The auxiliary display consists of two lines of a 4 digit [7 segment LED displays]. Limited text would be shown on the s. Some letters are displayed in the wrong case, for example 't' instead of 'T'. The letters 'M', 'W' and 'X' can not be displayed in an any form. Others like 'V' end up looking the same as 'U'.
 
-A caution/warning [bicolor LED] is reworked by soldering onto the 'colon' column of the top display. This would be easier to see and interpret than the decimal point indicators. Red - warning, yellow - alert, green - ok.
+A caution/warning [bicolor LED] is reworked by soldering onto the 'colon' column of the top display. Red - warning(fix it now or land), yellow - alert(look into it before it becomes a problem), green - ok.
 
 An acknowledge pushbutton is also part of the display.
 
@@ -184,27 +188,31 @@ To prevent having to re-acknowledge warnings there would be both temporal and ra
 * T 1 3/4 LED holder for panel - Digikey 67-1332-ND
 * 2 Adafruit 7 segment displays - Digikey 1528-1473-ND
 * 10 240 ohm 1% resistors - Digikey A121513CT-ND
-* 15K ohm 5% resistors - Digikey
+* 15K ohm 5% resistors - Digikey 15.0KXBK-ND
 * 3K ohm 1% resistor - Digikey 3.01KXBK-ND
 * 1k ohm 1% resistor - Digikey 1.00KXBK-ND
-* 10 input screw terminal block - Digikey ED10567-ND
+* 12 input screw terminal block - Digikey ED10568-ND
 * .025 square breakaway headers - Digikey 929834-04-36-ND (tin) or 929647-04-36-ND (gold) - will probably work well on the thermocouple board w/o a header extension.
 * jack for auxiliary display 6 pin - Digikey 455-2271-ND
 * header for auxiliary display 6 pin - Digikey 455-2218-ND
 * contacts for header x 10 - Digikey 455-1135-1-ND
 * pushbutton switch - Digikey EG2015-ND
 * K style thermocouple wire, 24-26 gauge, EBay
-* Bigger filter caps?, thermocouples Digikey 1276-1246-1-ND
 * Enclosure - Electrical box - B108R - Home Depot
 
 ### Future stuff
-* It may be possible to support 2 thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a thermistor. Only 8 bits are usable with 40x. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably double it again.
+* Record engine data by having the Engiuno pipe text to a port on the Stratux. The startup script on the stratux starts netcat (nc) in the background to record the text to a file. The script would also truncate the file at on powerup to limit its growth.
+* It may be possible to support 2 thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a thermistor. Only 8 bits are usable (the noisy lower bits help with oversampling though) with 40x. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably quadruple it (16x oversample).
 * The Arduino Yun would support airplanes lacking a Stratux. The code would need to use the 'bridge' objects instead of the ethernet objects. Use #ifdef AVR_YUN to flex the code.
 * Themes - a dark theme could be created easily enough by adjusting the styles. A larger text theme for the gauges would involve more defines and stringizing them for the SVG.
 * Warning lights instead of auxillary display? A board with 4 caution/warning LEDs (red/green common cathode [bicolor LED]). Turning red and green on produces yellow. Alternatively use a module like the [BOB-13884] to provide 3 RGB LED's.
 * Create another TCP or UDP port that can be read from the Stratux (perhaps with netcat). This would be a comma separated text stream of engine data to be logged.
 * Use digitalFastWrite for smaller code - https://github.com/NicksonYap/digitalWriteFast
-* Create mult16x16to32 function for smaller code - https://github.com/rekka/avrmultiplication
+* Percent power resources:
+table - www.kilohotel.com/rv8/rvlinks/o360apwr.xls www.kilohotel.com/rv8/rvlinks/io360apwr.xls
+GRT - tables for mp_at_55%(rpm), mp_at_75%(rpm), delta_hp(pres.alt), also uses OAT. The delta-hp is a constant rpm, mp in the cruise range.
+MGL - formula (3 constant) http://www.mglavionics.co.za/Docs/MGL%20EFIS%20G2%20HP%20calculation.pdf
+O-320 power chart http://preflight.dynonavionics.com/2014/02/did-you-know-percent-power-dynon-way.html
 
 
 [open source]:https://en.wikipedia.org/wiki/Open-source_model

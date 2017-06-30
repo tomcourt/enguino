@@ -17,10 +17,13 @@ int scaleValue(const Sensor *s, int val) {
 
 // vertical gauge is
 //    1200 wide except extra room on right needed for labels (centered at 600)
-//    6050 or so high
+//    5950 high
 void printVertical(const Gauge *g, bool showLabels) {
+#ifdef BOUNDING_BOX
+  print_P(F("<rect x='0' y='0' width='1200' height='5950' fill='none' stroke='orange'/>\n"));
+#endif
   // starts at 1100, 4000 high
-  print_P(F("<rect x='400' y='1100' width='400' height='4000' class='rectgauge'/>\n"));
+  print_P(F("<rect x='400' y='1000' width='400' height='4000' class='rectgauge'/>\n"));
   
   int val = readGauge(g);
   int mark = scaleMark(g->sensor, val) << 2;
@@ -36,7 +39,7 @@ void printVertical(const Gauge *g, bool showLabels) {
     print_P(F("<rect fill='"));
     print(g->regionColors[i]);
     print_P(F("' x='400' y='"));
-    print(4000 + 1100 - e);
+    print(4000 + 1000 - e);
     print_P(F("' width='400' height='"));
     print_n_close(e-s);
     s = e;
@@ -44,7 +47,7 @@ void printVertical(const Gauge *g, bool showLabels) {
   
   // add tick marks and labels
   for (int i=0; i<g->n_labels; i++) {
-    s = g->labelPts[i] + 1100;
+    s = g->labelPts[i] + 1000;
     print_P(F("<line class='segment' x1='250' y1='"));
     print(s);
     print_P(F("' x2='950' y2='"));
@@ -59,31 +62,31 @@ void printVertical(const Gauge *g, bool showLabels) {
   }
   
   if (showLabels) {
-    print_P(F("<text x='600' y='500' class='label'>"));
+    print_P(F("<text x='600' y='400' class='label'>"));
     print_text_close(g->label1);
   }
     
-  print_P(F("<text x='600' y='920' class='label'>"));
+  print_P(F("<text x='600' y='820' class='label'>"));
   print_text_close(g->label2);
   
-  print_P(F("<text x='600' y='5900' class='unit'>"));
+  print_P(F("<text x='600' y='5800' class='unit'>"));
   print_text_close(g->units);
   
   if (val == FAULT)
     color = yellow;
   if (color != 0 && color != green) {
-    print_P(F("<rect x='100' y='5175' width='1000' height='500' rx='90' ry='90' fill='"));
+    print_P(F("<rect x='100' y='5075' width='1000' height='500' rx='90' ry='90' fill='"));
     print(color);
     print_n_close();
   }
 
-  print_P(F("<text x='600' y='5600' class='value'>"));
+  print_P(F("<text x='600' y='5500' class='value'>"));
   print(scaleValue(g->sensor, val), g->decimal);
   print_text_close();
 
   if (val != FAULT) {
     print_P(F("<use xlink:href='#vmark' x='600' y='"));
-    print_n_close(4000 + 1100 - mark);
+    print_n_close(4000 + 1000 - mark);
   }
 }
 
@@ -93,6 +96,10 @@ void printVertical(const Gauge *g, bool showLabels) {
 //    ... or so high
 void printHorizontal(const Gauge *g, int count) {
   // starts at ..., 8000 wide
+#ifdef BOUNDING_BOX
+  print_P(F("<rect x='-2' y='0' width='9100' height='3500' fill='none' stroke='orange'/>\n"));
+#endif
+
   int offset = 0;
   for (int n=0; n<count; n++) {
     print_P(F("<rect x='1100' y='"));
@@ -172,6 +179,9 @@ void printHorizontal(const Gauge *g, int count) {
 
 void printAuxHoriz(const Gauge *g, int count) {
   // starts at ..., 8000 wide
+#ifdef BOUNDING_BOX
+  print_P(F("<rect x='1100' y='0' width='9300' height='3850' fill='none' stroke='orange'/>\n"));
+#endif
   int offset = 0;
   for (int n=0; n<count; n++) {
     int val = readGauge(g, n);
@@ -181,6 +191,14 @@ void printAuxHoriz(const Gauge *g, int count) {
       print_P(F("<rect x='9200' y='"));
       print(offset+550);
       print_P(F("' width='1000' height='500' rx='90' ry='90' fill='yellow'/>"));
+    }
+    else if (leanMode) {
+      logValue(val,"val");
+      logValue(peakEGT[n],"peak");
+      if (val > peakEGT[n])
+        peakEGT[n] = val;
+      if (val+11 < peakEGT[n])
+        val -= peakEGT[n];
     }
     print_P(F("<text x='9700' y='"));
     print(offset + 800);
@@ -216,9 +234,13 @@ void printAuxHoriz(const Gauge *g, int count) {
 
 // vertical pair of gauges is
 //    2700 wide (centered at 1350)
-//    6050 or so high
+//    5950 or so high
 void printVerticalPair(const Gauge *g) {
-  print_P(F("<text x='1350' y='500' class='label'>"));
+#ifdef BOUNDING_BOX
+  print_P(F("<rect x='0' y='0' width='2700' height='5950' fill='none' stroke='orange'/>\n"));
+#endif
+
+  print_P(F("<text x='1350' y='400' class='label'>"));
   print_text_close(g->label1);
   
   Gauge t = *g;
@@ -243,6 +265,10 @@ void printVerticalPair(const Gauge *g) {
 //    3000 wide (centered at 1500)
 //    2650 or so high
 void printRound(const Gauge *g) {
+#ifdef BOUNDING_BOX
+  print_P(F("<rect x='0' y='0' width='3000' height='2650' fill='none' stroke='orange'/>\n"));
+#endif
+
   // gauge sweeps 2400 units (-30.0 to 30.0 degrees)
   print_P(F("<g transform='translate(1500 1800)'>\n"));
   // border sweeps from -31 to 31 degrees
@@ -314,6 +340,21 @@ void printRound(const Gauge *g) {
 }
 
 
+void printInfoBox() {
+#ifdef BOUNDING_BOX
+  print_P(F("<rect x='0' y='0' width='1600' height='600' fill='none' stroke='orange'/>\n"));
+#endif
+
+  print_P(F("<g x='0' y='0' width='1600' height='600' onClick=\"javascript:ajax('?');\">\n"
+    "<rect width='1600' height='600' rx='100' ry='100' class='abutton'/>\n"
+  "<text x='800' y='475' class='value'>"));
+  if (leanMode)
+    print_P(F("Cancel</text></g>\n"));
+  else
+    print_P(F("Lean</text></g>\n"));
+}
+
+
 void printGauge(const Gauge *g) {
   print_P(F("<g transform='translate("));
   print(g->x);
@@ -336,61 +377,12 @@ void printGauge(const Gauge *g) {
     case gs_aux:
       printAuxHoriz(g, 4);
       break;
+    case gs_infobox:
+      printInfoBox();
+      break;
   }
   print_g_close();
 }
 
 
-void printPrefix() {
-  print_P(F(
-  "<!DOCTYPE html>\n"
-  "<html>\n"
-    "<head>\n"
-      "<title>Enguino</title>\n"
-      "<meta name='apple-mobile-web-app-capable' content='yes'>\n"      
-      "<meta name='mobile-web-app-capable' content='yes'>\n"      
-      "<style>\n"
-        ".segment { stroke:gray; stroke-width:20; }\n"
-        ".rectgauge  {  fill:none; stroke:black; stroke-width:40; }\n"
-        ".roundgauge {  fill:none; stroke:black; }\n"
-        ".label  { fill:dimgrey; text-anchor:middle; font-size:500px; }\n"
-        ".value  { fill:black; text-anchor:middle; font-size:500px; }\n"
-        ".number { fill:dimgrey; text-anchor:start; font-size:300px; alignment-baseline:central; }\n"
-        ".mnumber { fill:dimgrey; text-anchor:middle; font-size:300px; alignment-baseline:central; }\n"
-        ".unit   { fill:dimgrey; text-anchor:middle; font-size:300px; }\n"
-        ".abutton { fill:lightgrey; stroke:black; stroke-width:40; }\n"
-        ".indicator { fill:black }\n"
-      "</style>\n"
-      "<script type='text/javascript'>\n"
-        "setInterval(function() {\n"
-          "var xhttp = new XMLHttpRequest();\n"
-          "xhttp.onreadystatechange = function() {\n"
-            "if (this.readyState == 4 && this.status == 200) {\n"
-              "document.getElementById('dyn').innerHTML =\n"
-              "this.responseText;\n"
-            "}\n"
-          "};\n"
-          "xhttp.open('GET', 'd', true);\n"
-          "xhttp.send();\n"
-        "}, 1000);\n"
-      "</script>\n"
-    "</head>\n"
-    "<body>\n"
-    "<svg viewBox='0 0 13330 10000' style='display:block; position:absolute; top:5%; left:5%; width:90%; height:90%;'>\n"
-    "<defs>\n"
-    "<g id='hmark'>\n"
-    "<path d='M0 310 l-50 -50 v-520 l50 -50 l50 50 v520 Z' class='indicator'>\n"
-    "</g>\n"
-    "<g id='xmark'>\n"
-    "<path d='M0 220 l-150 150 h300 Z ' class='indicator'>\n"
-    "</g>\n"
-    "<g id='vmark'>\n"
-    "<path d='M310 0 l-50 -50 h-520 l-50 50 l50 50 h520 Z' class='indicator'>\n"
-    "</g>\n"
-    "</defs>\n"
-    "<g id='dyn'></g>\n"
-    "</svg>\n"
-    "</body>\n"
-  "</html>\n"
-  ));
-}
+

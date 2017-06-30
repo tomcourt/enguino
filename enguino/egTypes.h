@@ -13,7 +13,7 @@ typedef struct {
   const int  *result;
 } InterpolateTable;
 
-enum SensorType {st_r240to33, st_thermistor, st_volts, st_k_type_tc, st_j_type_tc, st_tachometer, st_fuel_flow};
+enum SensorType {st_r240to33, st_thermistorF, st_thermistorC, st_volts, st_k_type_tcF, st_j_type_tcF, st_k_type_tcC, st_j_type_tcC, st_tachometer, st_fuel_flow};
 // st_r240to33 -     0 - 1000      proportional resistive sensor
 // st_thermistor -   0 - 1500      degrees C. in tenths
 // st_volts -        0 - 1023      ADC units 4.88 mV/per
@@ -35,14 +35,14 @@ typedef struct {
   int mfactor;    // 0-4000 vertical gauge, 0-8000 horizontal gauge, 0-2400 round gauge
 } Sensor;
 
-enum GaugeStyle { gs_vert, gs_pair, gs_round, gs_horiz, gs_aux };
+enum GaugeStyle { gs_vert, gs_pair, gs_round, gs_horiz, gs_aux, gs_infobox };
 
 typedef struct {
   int x;
   int y;
   GaugeStyle style;
   
-  int decimal;  // add decimal point 'decimal' positons from the right (0 is integer)
+  byte decimal;  // add decimal point 'decimal' positons from the right (0 is integer)
   
   string label1;
   string label2;
@@ -50,15 +50,15 @@ typedef struct {
   
   string *labelValues;
   const int *labelPts;    // prescaled from low,high and unscaled pts
-  int n_labels;
+  byte n_labels;
   
   string *regionColors;
   const int *regionEndPts;  // prescaled from low,high and unscaled pts
-  int n_regions;
+  byte n_regions;
   
   const Sensor *sensor;
   
-  int pin;        // first pin if multiple sensors (cht/egt, fuel)
+  signed char pin;        // first pin if multiple sensors (cht/egt, fuel)
 } Gauge;
 
 enum GaugeColor { gc_green, gc_yellow, gc_red };

@@ -8,6 +8,8 @@
 
 #include "utility.h"
 
+#include "persist.h"
+
 // configuration of sensors and layout of the gauges
 #include "config.h"
 
@@ -28,9 +30,13 @@ EthernetServer server(80);
 EthernetClient client;
 
 int readGauge(const Gauge *g, byte n = 0);
+bool leanMode = false;
+int peakEGT[4];
 
 // Performance 'print' functions to ethernet 'client' (includes flush)
 #include "printEthernet.h"
+
+#include "printWeb.h"
 
 // Implementation for printPrefix and pringGauge
 #include "printGauges.h"
@@ -75,10 +81,10 @@ int readGauge(const Gauge *g, byte n = 0) {
   #ifdef RANDOM_SENSORS
     if (p < 16)
       return rand() & 0x3ff;        
-    if (p < 20)                     // CHT
-      return rand() & 0x1ff;
+    if (p < 20)                       
+      return rand() & 0x7ff;          // CHT
     if (p < 24)
-      return rand() & 0x1ff + 1000;   // EGT 
+      return rand() & 0x7ff + 4000;   // EGT 
     return FAULT;
     
   #else
@@ -86,19 +92,29 @@ int readGauge(const Gauge *g, byte n = 0) {
     if (p < 0)
       return FAULT;
      
+    int t = g->sensor->type;
+    int toF = 0;
     if (p < 16) { 
       v = analogRead(p);
-      int t = g->sensor->type;
       if (t == st_r240to33)
         v = interpolate(&r240to33, v);
-      else if (t == st_thermistor)
+      else if (t == st_thermistorC || t == st_thermistorF) {
         v = interpolate(&thermistor, v);
-   }
-   else if (p < 24) {     
+        if (t == st_thermistorF)
+          toF = 32 * 10;
+      }
+    }
+    else if (p < 24) {     
       noInterrupts();
       v = tcTemp[p-16];
       interrupts();
-     }
+      if (t == st_j_type_tcC || t == st_j_type_tcF)
+       v = int(multiply(v - tcTemp[8], 25599) >> 15) + tcTemp[8]; 
+      if (t == st_k_type_tcF || t == st_j_type_tcF)
+        toF = 32 * 4;
+    }
+    if (toF && v != FAULT) 
+      v = (v*9)/5 + toF;
     return v;     
   #endif
 }
@@ -107,15 +123,20 @@ int readGauge(const Gauge *g, byte n = 0) {
 void serveUpWebPage(char url) {
 // unsigned long start = millis();         
   switch(url) {  
-    case ' ':     // static webpage
-      printPrefix();
+     case ' ':     // static webpage
+      printHomePage();
 //    logTime(start, "Load page /");      
       break;
-    case 'd':     // dynamic webpage   
+   case '?':     // lean/cancel button pressed in main page
+      leanMode = !leanMode;
+      if (leanMode)
+        memset(peakEGT,0,sizeof(peakEGT));
+      // fallthru to main page
+   case 'd':     // dynamic webpage   
       for (int i=0; i<N(gauges); i++)
         printGauge(gauges+i);
-//   logTime(start, "Load page /d");      
-     break;
+//    logTime(start, "Load page /d");      
+      break;
   }
 }
 
@@ -123,9 +144,10 @@ void serveUpWebPage(char url) {
 
 void setup() {
   Serial.begin(9600);
-//  while (!Serial) 
-//    ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
+  //  while (!Serial) 
+  //    ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
 
+  eeInit();
   tcTempSetup();
   printLEDSetup();
   printLED(0,LED_TEXT(h,o,b,b));
@@ -153,6 +175,7 @@ void loop() {
         char token = client.read();
         if (token == '\r')
           continue;               // ignore '/r'
+        // Serial.print(token);
         if (*state == 0) {
           url = token;            // completed match of 'request', save webpage name
           state = request;
