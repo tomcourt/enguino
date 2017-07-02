@@ -33,6 +33,7 @@ typedef struct {
   int vfactor;    // int_reading = multiply * sensor >> divisor + offset
   int moffset;    // used to calculate marker position
   int mfactor;    // 0-4000 vertical gauge, 0-8000 horizontal gauge, 0-2400 round gauge
+  signed char pin;
 } Sensor;
 
 enum GaugeStyle { gs_vert, gs_pair, gs_round, gs_horiz, gs_aux, gs_infobox };
@@ -57,8 +58,6 @@ typedef struct {
   byte n_regions;
   
   const Sensor *sensor;
-  
-  signed char pin;        // first pin if multiple sensors (cht/egt, fuel)
 } Gauge;
 
 enum GaugeColor { gc_green, gc_yellow, gc_red };

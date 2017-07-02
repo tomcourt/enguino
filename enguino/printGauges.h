@@ -18,14 +18,14 @@ int scaleValue(const Sensor *s, int val) {
 // vertical gauge is
 //    1200 wide except extra room on right needed for labels (centered at 600)
 //    5950 high
-void printVertical(const Gauge *g, bool showLabels) {
+void printVertical(const Gauge *g, bool showLabels=true, byte pinOffset=0) {
 #ifdef BOUNDING_BOX
   print_P(F("<rect x='0' y='0' width='1200' height='5950' fill='none' stroke='orange'/>\n"));
 #endif
   // starts at 1100, 4000 high
   print_P(F("<rect x='400' y='1000' width='400' height='4000' class='rectgauge'/>\n"));
   
-  int val = readGauge(g);
+  int val = readSensor(g->sensor, pinOffset);
   int mark = scaleMark(g->sensor, val) << 2;
   
   const char *color = 0;
@@ -106,7 +106,7 @@ void printHorizontal(const Gauge *g, int count) {
     print(600+offset);
     print_P(F("' width='8000' height='400' class='rectgauge'/>\n"));
     
-    int val = readGauge(g, n);
+    int val = readSensor(g->sensor, n);
     int mark = scaleMark(g->sensor, val) << 3;
     
     const char *color = 0;
@@ -184,7 +184,7 @@ void printAuxHoriz(const Gauge *g, int count) {
 #endif
   int offset = 0;
   for (int n=0; n<count; n++) {
-    int val = readGauge(g, n);
+    int val = readSensor(g->sensor, n);
     int mark = scaleMark(g->sensor, val) << 3;
        
     if (val == FAULT) {
@@ -197,7 +197,7 @@ void printAuxHoriz(const Gauge *g, int count) {
       logValue(peakEGT[n],"peak");
       if (val > peakEGT[n])
         peakEGT[n] = val;
-      if (val+11 < peakEGT[n])
+      if (val+12 < peakEGT[n])  // minimium of 5 deg. F drop before showing negative
         val -= peakEGT[n];
     }
     print_P(F("<text x='9700' y='"));
@@ -243,13 +243,12 @@ void printVerticalPair(const Gauge *g) {
   print_P(F("<text x='1350' y='400' class='label'>"));
   print_text_close(g->label1);
   
-  Gauge t = *g;
-  t.label2 = "LEFT";
-  printVertical(&t, false);
-  t.label2 = "RGT";
-  t.pin++;
+  Gauge tg = *g;
+  tg.label2 = "LEFT";
+  printVertical(&tg, false, 0);
+  tg.label2 = "RGT";
   print_P(F("<g transform='translate(1500 0)'>"));
-  printVertical(&t, false);
+  printVertical(&tg, false, 1);
   print_g_close();
   // add tick marks and labels
   for (int i=0; i<g->n_labels; i++) {
@@ -303,7 +302,7 @@ void printRound(const Gauge *g) {
   print_P(F("<text x='0' y='5900' 700='unit'>"));
   print_text_close(g->units);
   
-  int val = readGauge(g);
+  int val = readSensor(g->sensor);
   int mark = (scaleMark(g->sensor, val) * 24) / 10;
 
   int scale = scaleValue(g->sensor, val);
@@ -345,13 +344,19 @@ void printInfoBox() {
   print_P(F("<rect x='0' y='0' width='1600' height='600' fill='none' stroke='orange'/>\n"));
 #endif
 
-  print_P(F("<g x='0' y='0' width='1600' height='600' onClick=\"javascript:ajax('?');\">\n"
+  print_P(F("<g width='1600' height='600' onClick=\"javascript:ajax('?');\">\n"
     "<rect width='1600' height='600' rx='100' ry='100' class='abutton'/>\n"
   "<text x='800' y='475' class='value'>"));
   if (leanMode)
     print_P(F("Cancel</text></g>\n"));
   else
     print_P(F("Lean</text></g>\n"));
+
+  print_P(F("<text x='800' y='1100' class='unit' fill='black'>Hobbs: "));    
+  if (ee_status.hobbs1k)
+    print(ee_status.hobbs1k);
+  print(ee_status.hobbs >> 2, 1);
+  print_text_close();
 }
 
 
@@ -363,7 +368,7 @@ void printGauge(const Gauge *g) {
   print_P(F(")'>\n"));
   switch(g->style) {
     case gs_vert:
-      printVertical(g, true);
+      printVertical(g);
       break;
     case gs_pair:
       printVerticalPair(g);

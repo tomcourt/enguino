@@ -29,9 +29,10 @@ IPAddress ip(192, 168, 0, 111);
 EthernetServer server(80);
 EthernetClient client;
 
-int readGauge(const Gauge *g, byte n = 0);
-bool leanMode = false;
+int readSensor(const Sensor *s, byte n = 0);
+bool leanMode;
 int peakEGT[4];
+byte hobbsCount = 90;
 
 // Performance 'print' functions to ethernet 'client' (includes flush)
 #include "printEthernet.h"
@@ -75,8 +76,8 @@ InterpolateTable r240to33 = {
   },
  };
 
-int readGauge(const Gauge *g, byte n = 0) {
-  int p = g->pin + n;
+int readSensor(const Sensor *s, byte n = 0) {
+  int p = s->pin + n;
   
   #ifdef RANDOM_SENSORS
     if (p < 16)
@@ -92,7 +93,7 @@ int readGauge(const Gauge *g, byte n = 0) {
     if (p < 0)
       return FAULT;
      
-    int t = g->sensor->type;
+    int t = s->type;
     int toF = 0;
     if (p < 16) { 
       v = analogRead(p);
@@ -143,11 +144,11 @@ void serveUpWebPage(char url) {
 
 
 void setup() {
-  Serial.begin(9600);
-  //  while (!Serial) 
-  //    ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
+//  Serial.begin(9600);
+//    while (!Serial) 
+//      ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
 
-  eeInit();
+  eeInit();  
   tcTempSetup();
   printLEDSetup();
   printLED(0,LED_TEXT(h,o,b,b));
@@ -206,5 +207,22 @@ void loop() {
     delay(1);
     // close the connection:
     client.stop();
+  }
+
+  if (eighthSecondCount >= 8) {
+    bool running = scaleValue(&vtS, readSensor(&vtS)) > 130; // greater than 13.0 volts means engine is running
+
+    if (running) {
+      if (--hobbsCount == 0) {
+        if (++(ee_status.hobbs) > 39999) {
+          ee_status.hobbs = 0;
+          ee_status.hobbs1k++;
+        }
+        eeUpdateStatus();
+        hobbsCount = 90;
+      }
+    }
+    
+    eighthSecondCount -= 8;
   }
 }

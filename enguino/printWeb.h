@@ -55,3 +55,39 @@ void printHomePage() {
   "</html>\n"
   ));
 }
+
+void printSetupPage() {
+  print_P(F(   
+    "<!DOCTYPE html>\n"
+    "<html>\n"
+      "<style>\n"
+        "form {\n"
+          "border: solid gray;\n"
+          "border-radius: 1em;\n"
+          "padding: 1em;\n"
+          "position: absolute;\n"
+          "top: 50%;\n"
+          "left: 50%;\n"
+          "margin-right: -50%;\n"
+          "transform: translate(-50%, -50%);\n"
+        "}\n"
+        "input {\n"
+          "margin-right: 1em;\n"
+        "}\n"
+      "</style>\n"
+      "<form>\n"
+        "<input type='radio' name='x' value='a' checked/>Add fuel<br>\n"
+        "<input type='radio' name='x' value='f'/>Set fuel capacity<br>\n"
+        "<input type='radio' name='x' value='h'/>Set hobbs<br>\n"
+        "<input type='radio' name='x' value='k'/>Set fuel flow k<br>\n"
+        "<br>\n"
+        "<input type='number' name='n' pattern='[0-9]*'/>\n"
+        "<input type='submit'/><br>\n"
+        "<br>\n"
+        "<input type='submit' value='Tanks Filled' onClick=\"javascript:location.href = '/fill';\"/>\n"
+        "<input type='submit' value='Cancel' style='float:right;' onClick=\"javascript:location.href = '/';\"/\n"
+      "</form>\n"
+    "</html>\n"
+  ));
+}
+    

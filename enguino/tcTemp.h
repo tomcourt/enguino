@@ -11,6 +11,8 @@
 
 volatile int tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal reference temp, disable IRQ's to access these
 
+volatile byte eighthSecondCount = 0;
+
 int readSPI() {
   word v = 0;
   for (byte i=16; i!=0; i--) {
@@ -43,7 +45,7 @@ void tcTempSetup() {
   TIMSK0 |= _BV(OCIE0A);  
 }
 
-// Interrupt is called every millisecond
+// Interrupt is called every millisecond (a little slower, actually 976.5625 Hz)
 SIGNAL(TIMER0_COMPA_vect) 
 {
   static byte ms = 0;
@@ -56,12 +58,12 @@ SIGNAL(TIMER0_COMPA_vect)
     digitalWrite(PINA2, ch&4);
     // ... wait a while for the capacitor on the ADC input to charge (< .1 mS actually needed)     
   }
-  else if (ms == 5) {
+  else if (ms == 21) {
     // begin conversion
     digitalWrite(PINCS, HIGH);
     // ... wait 100 mS for conversion to complete
   }
-  else if (ms == 105) {
+  else if (ms == 121) {   // spec says 100mS, IRQ's are a bit slower, so this is >100mS
     // stop conversion, start serial interface
     digitalWrite(PINCS, LOW); 
     // 100nS min. delay implied 
@@ -81,6 +83,7 @@ SIGNAL(TIMER0_COMPA_vect)
       ch = 0;
     }
     ms = 255; // ++ will make this 0 
+    eighthSecondCount++;
   }
   ms++;
 }

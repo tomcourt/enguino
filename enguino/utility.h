@@ -23,8 +23,8 @@ void logValue(int val, int num) {
   Serial.println(val);
 }
 
-void logNewline() {
-  Serial.println("");
+void logText(const char *text = "") {
+  Serial.println(text);
  }
 
 // https://github.com/rekka/avrmultiplication

@@ -10,28 +10,29 @@ typedef struct  {
 
 typedef struct {
   byte sequence;
-  byte filler;
   byte hobbs1k; // thousands of an hour rollover
   word hobbs;   // hobbs in 1/40 of an hour 0-999.975 (0-39,999)
   word fuel;    // fuel remaining in 1/40 of a gallon (10 GPH, changes every 9 seconds)
+  word filler;
 } EEStatus;
 
 EESettings ee_settings;
 EEStatus ee_status;
 
-static byte nextSlot = 1;
+static byte nextSlot;
 
 // slot 0 is for settings, slots 1 through 63 is for status, status' storage slot is distributed for 'wear-leveling' 
 // each slot has the data written twice, the second time is inverted
 // if the first half doesn't match the inverted second half than return false (no valid data)
 static bool eeRead(byte slot, void *buffer) {
   int address = slot << 4;
+      
   byte *cp = buffer;
   for (byte i=8; i; i--)
     *cp++ = EEPROM.read(address++); 
   cp = buffer;
   for (byte i=8; i; i--)
-    if (*cp++ != EEPROM.read(address++) ^ 0xFF) 
+    if (*cp++ != (EEPROM.read(address++) ^ 0xFF)) 
       return false;
   return true;  
 }
@@ -61,15 +62,20 @@ void eeInit() {
   // search all the slots for the highest sequence number
   bool found = false;
   EEStatus temp;
-  while (nextSlot++ < 64) {
-    if (!eeRead(nextSlot, &temp))
+  for (byte i=1; i<64; i++) { 
+    if (!eeRead(i, &temp))
       continue;
     // handle rollover math for sequence number
     if (found && (signed char)(temp.sequence - ee_status.sequence) <= 0)
       continue;
     ee_status = temp;
+    nextSlot = i + 1;
+    if (nextSlot > 63)
+      nextSlot = 1;
     found = true;
   }
+  if (found)
+    return;
   nextSlot = 2;
   // ee_status.ALL = 0; zeroed in initialization 
   eeWrite(1, (void *)&ee_status);  
@@ -84,8 +90,8 @@ void eeUpdateSettings() {
 // 15,000+ hour eeprom lifetime (at 10GPH) with updates whenever hobbs or gallons changes
 void eeUpdateStatus() {
   ee_status.sequence++;
-  eeWrite(0, &ee_status);
-  if (++nextSlot == 0)
+  eeWrite(nextSlot, &ee_status);
+  if (++nextSlot > 63)
     nextSlot = 1;
 }
 
