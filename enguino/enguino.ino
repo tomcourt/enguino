@@ -33,6 +33,7 @@ int readSensor(const Sensor *s, byte n = 0);
 bool leanMode;
 int peakEGT[4];
 byte hobbsCount = 90;
+bool engineRunning;
 
 // Performance 'print' functions to ethernet 'client' (includes flush)
 #include "printEthernet.h"
@@ -121,22 +122,49 @@ int readSensor(const Sensor *s, byte n = 0) {
 }
 
 
-void serveUpWebPage(char url) {
-// unsigned long start = millis();         
+void serveUpWebPage(char url, char var, word num) {
   switch(url) {  
-     case ' ':     // static webpage
+    case '?':     // lean/cancel/ button pressed or return from setup
+      switch (var) {
+        case 'l':
+          leanMode = !leanMode;
+          if (leanMode)
+            memset(peakEGT,0,sizeof(peakEGT));
+          break;
+        case 'a':
+          ee_status.fuel += num<<2;
+          if (ee_status.fuel > ee_settings.fullFuel)
+            ee_status.fuel = ee_settings.fullFuel;
+          goto eeStatus;
+        case 'h':
+          ee_status.hobbs1k = 0;
+          while (num >= 10000) {
+            num -= 10000;
+            (ee_status.hobbs1k)++;
+          }
+          ee_status.hobbs = num<<2; 
+eeStatus:
+          eeUpdateStatus();
+          break;
+        case 'f':
+          ee_settings.fullFuel = num<<2;
+          goto eeSettings;
+        case 'k':
+          ee_settings.kFactor = num;
+eeSettings:
+          eeUpdateSettings();
+          break;
+       }
+       // fallthru to static page
+    case ' ':     // static webpage
       printHomePage();
-//    logTime(start, "Load page /");      
       break;
-   case '?':     // lean/cancel button pressed in main page
-      leanMode = !leanMode;
-      if (leanMode)
-        memset(peakEGT,0,sizeof(peakEGT));
-      // fallthru to main page
+    case 's':      // setup page
+     printSetupPage();
+     break;
    case 'd':     // dynamic webpage   
       for (int i=0; i<N(gauges); i++)
         printGauge(gauges+i);
-//    logTime(start, "Load page /d");      
       break;
   }
 }
@@ -152,7 +180,7 @@ void setup() {
   tcTempSetup();
   printLEDSetup();
   printLED(0,LED_TEXT(h,o,b,b));
-  printLED(1,1234,1);   // replace this with a value read from EEPROM
+  printLED(1,ee_status.hobbs,1);   // replace this with a value read from EEPROM
   delay(1000);    // replace this with LED self test sequence
 
   // start the Ethernet connection and the server:
@@ -168,20 +196,17 @@ void loop() {
   if (client) {
     // an http request ends with a blank line
     char lastToken = 0;
-    const char *request = "GET /";
+    const char *request = "GET /?x= &n=";
     char *state = request;
-    char url = ' ';
+    char url = 0;
+    char var = 0;
+    word num = 0;
     while (client.connected()) {
       if (client.available()) {
         char token = client.read();
         if (token == '\r')
           continue;               // ignore '/r'
-        // Serial.print(token);
-        if (*state == 0) {
-          url = token;            // completed match of 'request', save webpage name
-          state = request;
-        }
-          
+        // Serial.print(token);          
         // two newlines in a row is the end of the request
         if (token == '\n' && lastToken == '\n') {
           // send a standard http response header
@@ -191,16 +216,35 @@ void loop() {
             "Connection: close\n"     // the connection will be closed after completion of the response
             "\n"
           ));
-          serveUpWebPage(url);
+          serveUpWebPage(url, var, num);
           flush();   
           break;
         }
-        if (token && token == *state)
-          *state ++;          // matches next character in a 'request', check next character
-        else
-          state = request;    // doesn't match next character, start from beginning
-
         lastToken = token;
+        
+        if (state != 0) {
+          switch (*state) {
+            case '\0':
+              if (token >= '0' && token <= '9') {
+                num = num*10 + token - '0';
+                continue;       // hold state
+              }
+              break;
+            case '?':
+              url = token;      // either a ? or the url
+              break;
+            case ' ':
+              var = token;
+              state++;          // advance state (falling thru would complete request which we don't want to do)
+              continue;           
+          }
+          if (token == *state)
+            state++;            // advance state
+          else if (url)
+            state = 0;          // completed getting the request because other than the templated query
+          else
+            state = request;    // reset looking for request if we haven't gotten to the '?'
+        }
       }
     }
     // give the web browser time to receive the data
@@ -210,9 +254,9 @@ void loop() {
   }
 
   if (eighthSecondCount >= 8) {
-    bool running = scaleValue(&vtS, readSensor(&vtS)) > 130; // greater than 13.0 volts means engine is running
+    engineRunning = scaleValue(&vtS, readSensor(&vtS)) > 130; // greater than 13.0 volts means engine is running
 
-    if (running) {
+    if (engineRunning) {
       if (--hobbsCount == 0) {
         if (++(ee_status.hobbs) > 39999) {
           ee_status.hobbs = 0;

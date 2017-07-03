@@ -344,15 +344,22 @@ void printInfoBox() {
   print_P(F("<rect x='0' y='0' width='1600' height='600' fill='none' stroke='orange'/>\n"));
 #endif
 
-  print_P(F("<g width='1600' height='600' onClick=\"javascript:ajax('?');\">\n"
-    "<rect width='1600' height='600' rx='100' ry='100' class='abutton'/>\n"
-  "<text x='800' y='475' class='value'>"));
-  if (leanMode)
-    print_P(F("Cancel</text></g>\n"));
+  print_P(F("<g width='1600' height='600' onClick=\"javascript:"));
+  if (engineRunning)
+    print_P(F("ajax('?x=l');\">\n"));
   else
-    print_P(F("Lean</text></g>\n"));
+    print_P(F("location.assign('s');\">\n"));  
+  print_P(F("<rect width='1600' height='600' rx='100' ry='100' class='abutton'/>\n"
+  "<text x='800' y='475' class='value'>"));
+  if (!engineRunning)
+    print_P(F("Setup"));
+  else if (leanMode)
+    print_P(F("Cancel"));
+  else
+    print_P(F("Lean"));
 
-  print_P(F("<text x='800' y='1100' class='unit' fill='black'>Hobbs: "));    
+  print_P(F("</text></g>\n"
+    "<text x='800' y='1100' class='unit' fill='black'>Hobbs: "));    
   if (ee_status.hobbs1k)
     print(ee_status.hobbs1k);
   print(ee_status.hobbs >> 2, 1);
