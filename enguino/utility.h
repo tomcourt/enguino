@@ -95,7 +95,7 @@ int interpolate(const InterpolateTable *table, int value) {
 }
 
 // sort a small list using insertion sort O(n^2) worst case
-void sort(byte n, int *list) {
+void sort(int *list, int n) {
   for (byte i=1; i<n; i++) {
     for (byte j=i; j>0 && list[j-1] > list[j]; j--) {
       int t = list[j];

@@ -92,22 +92,22 @@ The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing).
 
 **Leonardo Pins Mapping to ATmega 32U4**
 
-| Arduino | 32U4  | Use         |IRQ|Analog|Counter|
-|---------|-------|-------------|---|------|-------|
-| D0      | PD2   | Serial RX   | * |      |       |
-| D1      | PD3   | Serial TX   | * |      |       |
-| D2      | PD1   | SDA         | * |      |       |
-| D3      | PD0   | SCL/PWM     | * |      |       |
-| D4      | PD4   | TC Mux A0   |   |   *  |   *   |
-| D5      | PC6   | TC Mux A1   |   |      |       |
-| D6      | PD7   | TC Mux A2   |   |   *  |   *   |
-| D7      | PE6   | TC Mux EN   | * |      |       |
-| D8      | PB4   | TC CS       |   |   *  |       |
-| D9      | PB5   | Analog 9    |   |   *  |       |
-| D10     | PB6   | Ether CS    |   |   *  |       |
-| D11     | PB7   | PWM         |   |      |       |
-| D12     | PD6   | TC MISO     |   |   *  |       |
-| D13     | PC7   | TC SCLK/LED |   |      |       ||
+| Arduino | 32U4  | Use         |IRQ|Analog|Counter| Assign  |
+|---------|-------|-------------|---|------|-------|---------|
+| D0      | PD2   | Serial RX   | * |      |       | Aux-Sw  |
+| D1      | PD3   | Serial TX   | * |      |       | Fuel-F  |
+| D2      | PD1   | SDA         | * |      |       | Tach    |
+| D3      | PD0   | SCL/PWM     | * |      |       | Aux-SCL |
+| D4      | PD4   | TC Mux A0   |   |   *  |   *   |         |
+| D5      | PC6   | TC Mux A1   |   |      |       |         |
+| D6      | PD7   | TC Mux A2   |   |   *  |   *   |         |
+| D7      | PE6   | TC Mux EN   | * |      |       |         |
+| D8      | PB4   | TC CS       |   |   *  |       |         |
+| D9      | PB5   | Analog 9    |   |   *  |       |         |
+| D10     | PB6   | Ether CS    |   |   *  |       |         |
+| D11     | PB7   | PWM         |   |      |       | Aux-SDA |
+| D12     | PD6   | TC MISO     |   |   *  |       |         |
+| D13     | PC7   | TC SCLK/LED |   |      |       |         ||
 
 The D6 and D12 pins support counters which would be useful for the tach and fuel flow. But the thermocouple board also conflicts with this.
 
@@ -147,7 +147,7 @@ The tachometer measures RPM by recording the uS time whenever the pin has a risi
 
 The auxiliary display consists of two lines of a 4 digit [7 segment LED displays]. Limited text would be shown on the s. Some letters are displayed in the wrong case, for example 't' instead of 'T'. The letters 'M', 'W' and 'X' can not be displayed in an any form. Others like 'V' end up looking the same as 'U'.
 
-A caution/warning [bicolor LED] is reworked by soldering onto the 'colon' column of the top display. Red - warning(fix it now or land), yellow - alert(look into it before it becomes a problem), green - ok.
+A caution/warning [bicolor LED] is reworked by soldering onto the 'colon' column of the top display. Red - warning(fix it now or land), yellow - alert(look into it before it becomes a problem), green - ok. The center of the LED goes to pin 7 (the colon's column), red (the flat side) to pin 4 (c segment), green to pin 2 (d segment). Display pins are in DIP order, from the display side, pins 1-7 along the bottom are in reading order, 8-14 in reverse order across the top.
 
 An acknowledge pushbutton is also part of the display.
 
@@ -195,14 +195,14 @@ To prevent having to re-acknowledge warnings there would be both temporal and ra
 * .025 square breakaway headers - Digikey 929834-04-36-ND (tin) or 929647-04-36-ND (gold) - will probably work well on the thermocouple board w/o a header extension.
 * jack for auxiliary display 6 pin - Digikey 455-2271-ND
 * header for auxiliary display 6 pin - Digikey 455-2218-ND
-* contacts for header x 10 - Digikey 455-1135-1-ND
+* 10 contacts for header - Digikey 455-1135-1-ND
 * pushbutton switch - Digikey EG2015-ND
 * K style thermocouple wire, 24-26 gauge, EBay
 * Enclosure - Electrical box - B108R - Home Depot
 
 ### Future stuff
 * Record engine data by having the Engiuno pipe text to a port on the Stratux. The startup script on the stratux starts netcat (nc) in the background to record the text to a file. The script would also truncate the file at on powerup to limit its growth.
-* It may be possible to support 2 thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a thermistor. Only 8 bits are usable (the noisy lower bits help with oversampling though) with 40x. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably quadruple it (16x oversample).
+* It may be possible to support 2 thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a thermistor. Only 8 bits are usable with 40x, the noisy lower bits help with oversampling though. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably quadruple it (16x oversample).
 * The Arduino Yun would support airplanes lacking a Stratux. The code would need to use the 'bridge' objects instead of the ethernet objects. Use #ifdef AVR_YUN to flex the code.
 * Themes - a dark theme could be created easily enough by adjusting the styles. A larger text theme for the gauges would involve more defines and stringizing them for the SVG.
 * Warning lights instead of auxillary display? A board with 4 caution/warning LEDs (red/green common cathode [bicolor LED]). Turning red and green on produces yellow. Alternatively use a module like the [BOB-13884] to provide 3 RGB LED's.

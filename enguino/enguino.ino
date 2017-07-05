@@ -35,6 +35,11 @@ int peakEGT[4];
 byte hobbsCount = 90;
 bool engineRunning;
 
+volatile unsigned long lastTachTime;
+volatile bool tachDidPulse;
+volatile int rpm[4];
+volatile byte rpmP;
+
 // Performance 'print' functions to ethernet 'client' (includes flush)
 #include "printEthernet.h"
 
@@ -96,7 +101,15 @@ int readSensor(const Sensor *s, byte n = 0) {
      
     int t = s->type;
     int toF = 0;
-    if (p < 16) { 
+    if (p == 15) {
+      // RPM's are occasionaly screwed up because of IRQ latency.
+      // Throw out highest and lowest and average the middle 2
+      noInterrupts();
+      sort(rpm, sizeof(rpm)/sizeof(int));
+      v = (rpm[1]+rpm[2])>>1; 
+      interrupts();
+    }
+    else if (p < 16) { 
       v = analogRead(p);
       if (t == st_r240to33)
         v = interpolate(&r240to33, v);
@@ -126,17 +139,17 @@ void serveUpWebPage(char url, char var, word num) {
   switch(url) {  
     case '?':     // lean/cancel/ button pressed or return from setup
       switch (var) {
-        case 'l':
+        case 'l':     // lean mode
           leanMode = !leanMode;
           if (leanMode)
             memset(peakEGT,0,sizeof(peakEGT));
           break;
-        case 'a':
+        case 'a':   // add fuel
           ee_status.fuel += num<<2;
           if (ee_status.fuel > ee_settings.fullFuel)
             ee_status.fuel = ee_settings.fullFuel;
           goto eeStatus;
-        case 'h':
+        case 'h':   // set hobbs
           ee_status.hobbs1k = 0;
           while (num >= 10000) {
             num -= 10000;
@@ -146,10 +159,10 @@ void serveUpWebPage(char url, char var, word num) {
 eeStatus:
           eeUpdateStatus();
           break;
-        case 'f':
+        case 'f':   // set full fuel
           ee_settings.fullFuel = num<<2;
           goto eeSettings;
-        case 'k':
+        case 'k':   // set k-factor
           ee_settings.kFactor = num;
 eeSettings:
           eeUpdateSettings();
@@ -170,6 +183,14 @@ eeSettings:
 }
 
 
+void tachIRQ() {
+  unsigned long newTachTime = micros();
+  rpm[rpmP++ & 3] = (60000000L/24) / (newTachTime - lastTachTime);
+  lastTachTime = newTachTime;
+  tachDidPulse = true;
+}
+
+
 
 void setup() {
 //  Serial.begin(9600);
@@ -178,11 +199,14 @@ void setup() {
 
   eeInit();  
   tcTempSetup();
+  // setup LED last to allow 1mS for HT16K33
   printLEDSetup();
   printLED(0,LED_TEXT(h,o,b,b));
-  printLED(1,ee_status.hobbs,1);   // replace this with a value read from EEPROM
-  delay(1000);    // replace this with LED self test sequence
-
+  delay(1000);
+  printLED(0,ee_status.hobbs>>2,1);  
+  delay(1000);
+  
+  attachInterrupt(digitalPinToInterrupt(2),tachIRQ,RISING);
   // start the Ethernet connection and the server:
   Ethernet.begin(mac, ip);
   server.begin();
@@ -252,9 +276,16 @@ void loop() {
     // close the connection:
     client.stop();
   }
-
+  
   if (eighthSecondCount >= 8) {
-    engineRunning = scaleValue(&vtS, readSensor(&vtS)) > 130; // greater than 13.0 volts means engine is running
+    if (tachDidPulse)
+      tachDidPulse = false;
+    else
+      memset(rpm, 0, sizeof(rpm));
+    engineRunning = scaleValue(&vtS, readSensor(&vtS)) > 130 || rpm > 0; // greater than 13.0 volts means engine is running
+
+    printLED(0,scaleValue(&taS, readSensor(&taS)),0);
+    // printLEDFuel(scaleValue(&flS, readSensor(&flS,0)), scaleValue(&flS, readSensor(&flS,1)));
 
     if (engineRunning) {
       if (--hobbsCount == 0) {
