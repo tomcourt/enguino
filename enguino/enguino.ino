@@ -105,9 +105,11 @@ int readSensor(const Sensor *s, byte n = 0) {
       // RPM's are occasionaly screwed up because of IRQ latency.
       // Throw out highest and lowest and average the middle 2
       noInterrupts();
-      sort(rpm, sizeof(rpm)/sizeof(int));
-      v = (rpm[1]+rpm[2])>>1; 
+      int r[4];
+      memcpy(r, rpm, sizeof(rpm));
       interrupts();
+      sort(r, sizeof(r)/sizeof(int));
+      v = (r[1]+r[2])>>1; 
     }
     else if (p < 16) { 
       v = analogRead(p);
@@ -202,8 +204,7 @@ void setup() {
   // setup LED last to allow 1mS for HT16K33
   printLEDSetup();
   printLED(0,LED_TEXT(h,o,b,b));
-  delay(1000);
-  printLED(0,ee_status.hobbs>>2,1);  
+  printLED(1,ee_status.hobbs>>2,1);  
   delay(1000);
   
   attachInterrupt(digitalPinToInterrupt(2),tachIRQ,RISING);
@@ -276,16 +277,15 @@ void loop() {
     // close the connection:
     client.stop();
   }
-  
+
+  if (eighthSecondCount == 4)
+    goto halfSecond;
   if (eighthSecondCount >= 8) {
     if (tachDidPulse)
       tachDidPulse = false;
     else
       memset(rpm, 0, sizeof(rpm));
     engineRunning = scaleValue(&vtS, readSensor(&vtS)) > 130 || rpm > 0; // greater than 13.0 volts means engine is running
-
-    printLED(0,scaleValue(&taS, readSensor(&taS)),0);
-    // printLEDFuel(scaleValue(&flS, readSensor(&flS,0)), scaleValue(&flS, readSensor(&flS,1)));
 
     if (engineRunning) {
       if (--hobbsCount == 0) {
@@ -299,5 +299,9 @@ void loop() {
     }
     
     eighthSecondCount -= 8;
+
+halfSecond:
+    printLED(0,scaleValue(&taS, readSensor(&taS)),0);
+    printLEDFuel(scaleValue(&flS, readSensor(&flS,0)), scaleValue(&flS, readSensor(&flS,1)));    
   }
 }

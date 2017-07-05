@@ -79,12 +79,13 @@ byte colon;   // used for showing alarm status by wiring a red/green LED onto th
 #define STATUS_NORMAL  0x8
 
 void writeI2C(byte line, byte *buffer, byte len) {
-  if (!i2c_start((I2C_ADDRESS | (line<<1)) | I2C_WRITE))
-    return;
+  if (!i2c_start((I2C_ADDRESS | (line<<1)) | I2C_WRITE)) 
+    goto stop;
   while (len--) {
     if (!i2c_write(*buffer++)) 
-      return;   
+      goto stop;   
   }
+stop:
   i2c_stop();
 }
 
@@ -132,7 +133,7 @@ void printLEDRawHalfDigits(byte offset, word number) {
 void printLEDSetup() {
   i2c_init();
   
-  for (byte line=0; line<1; line++) {
+  for (byte line=0; line<2; line++) {   
     commandLED(line, HT16K33_OSCILATOR_ON);
     commandLED(line, HT16K33_BLINK_OFF);
     commandLED(line, HT16K33_BRIGHT_MAX);  

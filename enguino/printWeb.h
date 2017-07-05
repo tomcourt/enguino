@@ -23,10 +23,14 @@ void printHomePage() {
           "var xhttp = new XMLHttpRequest();\n"
           "xhttp.open('GET',u,true);\n"
           "xhttp.onreadystatechange = function() {\n"
-            "if (this.readyState == 4 && this.status==200)\n"
+            "if (this.readyState == 4 && this.status==200) {\n"
               "document.getElementById('dyn').innerHTML=this.responseText;\n"
+             "}\n"
           "};\n"
-          "xhttp.ontimeout = function() { xhttp.abort() };\n"
+          "xhttp.ontimeout = function() {\n"
+            "xhttp.abort();\n"
+            "document.getElementById('dyn').innerHTML='';"
+           "};\n"
           "xhttp.timeout=900;\n"
           "xhttp.send();\n"
         "}\n"
@@ -54,6 +58,13 @@ void printHomePage() {
     "</body>\n"
   "</html>\n"
   ));
+
+  // greying engine screen when connection fails can be done by replacing "document.getElementById('dyn').innerHTML='';" with
+  // "document.getElementById('over').style.display='';\n"
+  // and add "document.getElementById('over').style.display='none';\n" when dynamic content is loaded
+  // and add the following to style and html respectively
+  // ".overc { background-color:black; opacity:0.8; z-index:20; height:100%; width:100%; background-repeat:no-repeat; background-position:center; position:absolute; top:0px; left:0px; transition:2.0s }\n"        
+  // "<div id='over' class='overc'></div>\n"
 }
 
 void printSetupPage() {

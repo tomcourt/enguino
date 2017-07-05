@@ -359,7 +359,7 @@ void printInfoBox() {
     print_P(F("Lean"));
 
   print_P(F("</text></g>\n"
-    "<text x='800' y='1100' class='unit' fill='black'>Hobbs: "));    
+    "<text x='800' y='1200' class='value'>Hobbs: "));    
   if (ee_status.hobbs1k)
     print(ee_status.hobbs1k);
   print(ee_status.hobbs >> 2, 1);

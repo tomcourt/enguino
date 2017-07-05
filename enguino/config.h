@@ -88,6 +88,6 @@ const Gauge gauges[] = {
   {100,    3200,  gs_round, 1,    "MP",   "",     "in-hg",  0,      0,    0,        maRC, maRP, N(maRC),  &maS},
   {2950,    6150, gs_horiz, 0,    "CHT",  "",     "",       chLV,   chLP, N(chLV),  chRC, chRP, N(chRC),  &chS},
   {2950,    6150, gs_aux,   0,    "EGT",  "",     "",       egLV,   egLP, N(egLV),  0,    0,    0,        &egS},
-  {300,     6750, gs_infobox,0,   "",     "",     "",       0,      0,    0,        0,    0,    0,        0}
+  {800,     6700, gs_infobox,0,   "",     "",     "",       0,      0,    0,        0,    0,    0,        0}
 };
 
