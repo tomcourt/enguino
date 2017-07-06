@@ -23,16 +23,17 @@ const char *red = "red";
 // Some numberic values are multipled by 10 and then have a decimal point added when displayed. 
 // The MX macro converts a floating point factor for m into an integer factor. The gauge pointers vary from 0 to 1000. 
 // Use GB() and GMX to set the graphs b and m values based on lowest input and input range (hi-low) respectively. 
-//
-const Sensor opS = {    st_r240to33,       0,       MX(0.1),  0,                MX(1.0),          1};   // 0 - 100
-const Sensor otS = {    st_thermistorF,    0,        MX(.1),  GB(50*10),        GMX(200*10),      2};   // 50 - 250
-const Sensor vtS = {    st_volts,          0,  MX(ADCtoV10),  GB(100*V10toADC), GMX(60*V10toADC), 0};   // 100 - 160   (10 - 16)
-const Sensor fpS = {    st_r240to33,       0,       MX(0.1),  0,                MX(1.0),          3};   // 0 - 100     (0 - 10)
-const Sensor flS = {    st_r240to33,       0,      MX(0.16),  0,                MX(1.0),          4};   // 0 - 160     (0 - 16)
-const Sensor taS = {    st_tachometer,     0,        MX(1.),  0,                GMX(3000),        15};  // 0 - 3000 
-const Sensor maS = {    st_volts,        100,          2000,  0,                8008,             -1};  // 100 - 350   (10 - 35)
-const Sensor chS = {    st_k_type_tcF,     0,       MX(.25),  GB(100*4),        GMX(400*4),       16};  // 100 - 500,  input is .25 deg. F  
-const Sensor egS = {    st_k_type_tcF,     0,       MX(.25),  GB(1000*4),       GMX(600*4),       20};  // 1000 - 1600,input is .25 deg. F
+
+//                   sensor-type,  pin, decimal, voffset,      vfactor,          moffset,          mfactor, lowAlarm, lowAlert, highAlert, highAlarm
+const Sensor vtS = { st_volts,       0,       1,       0, MX(ADCtoV10), GB(100*V10toADC), GMX(60*V10toADC),      110,      130,      9999,       160 };
+const Sensor opS = { st_r240to33,    1,       0,       0,      MX(0.1),                0,          MX(1.0),       25,       55,        95,        95 }; 
+const Sensor otS = { st_thermistorF, 2,       0,       0,       MX(.1),        GB(50*10),      GMX(200*10),       -1,      140,      9999,       250 };
+const Sensor fpS = { st_r240to33,    3,       1,       0,      MX(0.1),                0,          MX(1.0),        5,       20,        60,        80 };
+const Sensor flS = { st_r240to33,    4,       1,       0,     MX(0.16),                0,          MX(1.0),       25,       50,      9999,       999 };
+const Sensor taS = { st_tachometer, 15,       0,       0,       MX(1.),                0,        GMX(3000),       -1,      500,      9999,      2700 };
+const Sensor maS = { st_volts,      -1,       1,     100,         2000,                0,             8008,       -1,       -1,      9999,      9999 }; 
+const Sensor chS = { st_k_type_tcF, 16,       0,       0,      MX(.25),        GB(100*4),       GMX(400*4),       -1,      150,       400,       500 };  
+const Sensor egS = { st_k_type_tcF, 20,       0,       0,      MX(.25),       GB(1000*4),       GMX(600*4),       -1,       -1,      9999,      9999 };
 
 // Labels
 // ------
@@ -78,16 +79,24 @@ int    chRP[] = { 1000,   6000,   7940,   8000    };
 // -----------------------
 #define bank 3500   // bank of misc vertical gauges
 const Gauge gauges[] = {
-  //  x,      y,  style,  decimal,  label1, label2, units,  labVal, labPt,num,    regClr, regPt, num,    sensor
-  {bank+0,    0,  gs_vert,  0,    "OIL",  "PRES", "psi",    opLV,   opLP, N(opLV),  opRC, opRP, N(opRC),  &opS},
-  {bank+1750, 0,  gs_vert,  0,    "OIL",  "TEMP", "&deg;F", otLV,   otLP, N(otLV),  otRC, otRP, N(otRC),  &otS},
-  {bank+3500, 0,  gs_vert,  1,    "",     "VOLT", "volt",   vtLV,   vtLP, N(vtLV),  vtRC, vtRP, N(vtRC),  &vtS},
-  {bank+5250, 0,  gs_vert,  1,    "FUEL", "PRES", "psi",    fpLV,   fpLP, N(fpLV),  fpRC, fpRP, N(fpRC),  &fpS},
-  {bank+7000, 0,  gs_pair,  1,    "FUEL", "",     "gal",    flLV,   flLP, N(flLV),  flRC, flRP, N(flRC),  &flS}, 
-  {100,       0,  gs_round, 0,    "TACH", "",     "rpm",    0,      0,    0,        taRC, taRP, N(taRC),  &taS},
-  {100,    3200,  gs_round, 1,    "MP",   "",     "in-hg",  0,      0,    0,        maRC, maRP, N(maRC),  &maS},
-  {2950,    6150, gs_horiz, 0,    "CHT",  "",     "",       chLV,   chLP, N(chLV),  chRC, chRP, N(chRC),  &chS},
-  {2950,    6150, gs_aux,   0,    "EGT",  "",     "",       egLV,   egLP, N(egLV),  0,    0,    0,        &egS},
-  {800,     6700, gs_infobox,0,   "",     "",     "",       0,      0,    0,        0,    0,    0,        0}
+  //  x,      y,  style,     label1, label2, units,  labVal,  labPt,     num, regClr, regPt,     num, sensor
+  {bank+0,    0,  gs_vert,   "OIL",  "PRES", "psi",    opLV,   opLP, N(opLV),   opRC,  opRP, N(opRC),  &opS},
+  {bank+1750, 0,  gs_vert,   "OIL",  "TEMP", "&deg;F", otLV,   otLP, N(otLV),   otRC,  otRP, N(otRC),  &otS},
+  {bank+3500, 0,  gs_vert,   "",     "VOLT", "volt",   vtLV,   vtLP, N(vtLV),   vtRC,  vtRP, N(vtRC),  &vtS},
+  {bank+5250, 0,  gs_vert,   "FUEL", "PRES", "psi",    fpLV,   fpLP, N(fpLV),   fpRC,  fpRP, N(fpRC),  &fpS},
+  {bank+7000, 0,  gs_pair,   "FUEL", "",     "gal",    flLV,   flLP, N(flLV),   flRC,  flRP, N(flRC),  &flS}, 
+  {100,       0,  gs_round,  "TACH", "",     "rpm",    0,      0,    0,         taRC,  taRP, N(taRC),  &taS},
+  {100,    3200,  gs_round,  "MP",   "",     "in-hg",  0,      0,    0,         maRC,  maRP, N(maRC),  &maS},
+  {2950,    6150, gs_horiz,  "CHT",  "",     "",       chLV,   chLP, N(chLV),   chRC,  chRP, N(chRC),  &chS},
+  {2950,    6150, gs_aux,    "EGT",  "",     "",       egLV,   egLP, N(egLV),      0,     0,       0,  &egS},
+  {800,     6650, gs_infobox,"",     "",     "",       0,      0,    0,            0,     0,       0,     0}
+};
+
+// Guage layout for aux display
+const AuxDisplay auxdisplay[2] = {
+  { .sensor = {&taS, 0} },
+  { .sensor = {&taS, 0} }
+
+
 };
 

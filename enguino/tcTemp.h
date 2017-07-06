@@ -13,6 +13,10 @@ volatile int tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal refere
 
 volatile byte eighthSecondCount = 0;
 
+volatile byte switchDown;   // use this for detecting a key held down for a period of time
+volatile byte switchUp;
+volatile byte switchPress;   // use this to detect a short keypress, then reset to 0
+
 int readSPI() {
   word v = 0;
   for (byte i=16; i!=0; i--) {
@@ -62,6 +66,18 @@ SIGNAL(TIMER0_COMPA_vect)
     // begin conversion
     digitalWrite(PINCS, HIGH);
     // ... wait 100 mS for conversion to complete
+
+    if (digitalRead(0)) {
+      if (++switchUp >  2) {
+        switchUp = 2;
+        if (switchDown)
+          switchPress = switchDown;
+        switchDown = 0; 
+      }  
+    }
+    else {
+      ++switchDown;
+    }
   }
   else if (ms == 121) {   // spec says 100mS, IRQ's are a bit slower, so this is >100mS
     // stop conversion, start serial interface

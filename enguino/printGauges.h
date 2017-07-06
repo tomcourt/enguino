@@ -81,7 +81,7 @@ void printVertical(const Gauge *g, bool showLabels=true, byte pinOffset=0) {
   }
 
   print_P(F("<text x='600' y='5500' class='value'>"));
-  print(scaleValue(g->sensor, val), g->decimal);
+  print(scaleValue(g->sensor, val), g->sensor->decimal);
   print_text_close();
 
   if (val != FAULT) {
@@ -142,7 +142,7 @@ void printHorizontal(const Gauge *g, int count) {
     print_P(F("<text x='500' y='"));
     print(offset+800);
     print_P(F("' class='value' alignment-baseline='central'>"));
-    print(scaleValue(g->sensor, val), g->decimal);
+    print(scaleValue(g->sensor, val), g->sensor->decimal);
     print_text_close();
 
     if (val != FAULT) {
@@ -203,7 +203,7 @@ void printAuxHoriz(const Gauge *g, int count) {
     print_P(F("<text x='9700' y='"));
     print(offset + 800);
     print_P(F("' class='value' alignment-baseline='central'>"));
-    print(scaleValue(g->sensor, val), g->decimal);
+    print(scaleValue(g->sensor, val), g->sensor->decimal);
     print_text_close();
 
     if (val != FAULT) {
@@ -324,7 +324,7 @@ void printRound(const Gauge *g) {
   }
 
   print_P(F("<text x='0' y='350' class='value'>"));
-  print(scale, g->decimal);
+  print(scale, g->sensor->decimal);
   print_text_close();
   
   print_P(F("<text x='0' y='700' class='unit'>"));
@@ -341,7 +341,7 @@ void printRound(const Gauge *g) {
 
 void printInfoBox() {
 #ifdef BOUNDING_BOX
-  print_P(F("<rect x='0' y='0' width='1600' height='600' fill='none' stroke='orange'/>\n"));
+  print_P(F("<rect x='0' y='0' width='1600' height='2800' fill='none' stroke='orange'/>\n"));
 #endif
 
   print_P(F("<g width='1600' height='600' onClick=\"javascript:"));
@@ -357,9 +357,17 @@ void printInfoBox() {
     print_P(F("Cancel"));
   else
     print_P(F("Lean"));
-
-  print_P(F("</text></g>\n"
-    "<text x='800' y='1200' class='value'>Hobbs: "));    
+  print_P(F("</text></g>\n"));
+  
+  print_P(F("<text x='800' y='1300' class='value'>GPH: "));    
+  print(0, 1);
+  print_text_close();
+    
+ print_P(F("<text x='800' y='2100' class='value'>Tot: "));    
+  print(ee_status.fuel >> 2, 1);
+  print_text_close();
+ 
+  print_P(F("<text x='800' y='2800' style='text-anchor:middle; font-size:300px;'>Hobb: "));    
   if (ee_status.hobbs1k)
     print(ee_status.hobbs1k);
   print(ee_status.hobbs >> 2, 1);

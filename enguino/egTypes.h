@@ -29,11 +29,16 @@ enum SensorType {st_r240to33, st_thermistorF, st_thermistorC, st_volts, st_k_typ
 
 typedef struct {
   SensorType type;    
+  signed char pin;
+  byte decimal;   // add decimal point 'decimal' positons from the right (0 is integer)
   int voffset;    // used to display reading, int_reading has 'decimal' point shifted right
   int vfactor;    // int_reading = multiply * sensor >> divisor + offset
   int moffset;    // used to calculate marker position
   int mfactor;    // 0-4000 vertical gauge, 0-8000 horizontal gauge, 0-2400 round gauge
-  signed char pin;
+  int lowAlarm;
+  int lowAlert;
+  int highAlert;
+  int highAlarm;
 } Sensor;
 
 enum GaugeStyle { gs_vert, gs_pair, gs_round, gs_horiz, gs_aux, gs_infobox };
@@ -42,8 +47,6 @@ typedef struct {
   int x;
   int y;
   GaugeStyle style;
-  
-  byte decimal;  // add decimal point 'decimal' positons from the right (0 is integer)
   
   string label1;
   string label2;
@@ -61,5 +64,10 @@ typedef struct {
 } Gauge;
 
 enum GaugeColor { gc_green, gc_yellow, gc_red };
+
+typedef union {
+  struct { byte a,b,c,d; } literal;
+  struct { Sensor *s; word zero; } sensor;
+} AuxDisplay;
 
 

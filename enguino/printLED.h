@@ -49,6 +49,7 @@
 
 #define LED_DP 0x80 // decimal point
 #define LED__ 0x40  // minus sign
+#define LED_  0x0   // blank
 
 #define LED_A 0x77
 #define LED_b 0x7c

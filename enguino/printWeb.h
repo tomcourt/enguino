@@ -95,7 +95,7 @@ void printSetupPage() {
         "<input type='number' name='n' pattern='[0-9]*'/>\n"
         "<input type='submit'/><br>\n"
         "<br>\n"
-        "<input type='button' value='Tanks Filled' onClick=\"javascript:location.assign('/?x=f&n=9999');\"/>\n"
+        "<input type='button' value='Tanks Filled' onClick=\"javascript:location.assign('/?x=a&n=9999');\"/>\n"
         "<input type='button' value='Cancel' style='float:right;' onClick=\"javascript:location.assign('/');\"/\n"
       "</form>\n"
     "</html>\n"

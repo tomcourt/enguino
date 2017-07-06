@@ -40,6 +40,9 @@ volatile bool tachDidPulse;
 volatile int rpm[4];
 volatile byte rpmP;
 
+bool dim;
+bool didKeyDown;
+
 // Performance 'print' functions to ethernet 'client' (includes flush)
 #include "printEthernet.h"
 
@@ -194,6 +197,7 @@ void tachIRQ() {
 
 
 
+
 void setup() {
 //  Serial.begin(9600);
 //    while (!Serial) 
@@ -206,8 +210,15 @@ void setup() {
   printLED(0,LED_TEXT(h,o,b,b));
   printLED(1,ee_status.hobbs>>2,1);  
   delay(1000);
+  printLED(0,LED_TEXT( ,b,A,t));
+  printLED(1,scaleValue(&vtS, readSensor(&vtS)),1);  
+  delay(1000);
   
   attachInterrupt(digitalPinToInterrupt(2),tachIRQ,RISING);
+
+  pinMode(0, INPUT_PULLUP);
+//  attachInterrupt(digitalPinToInterrupt(0),switchIRQ,FALLING);
+  
   // start the Ethernet connection and the server:
   Ethernet.begin(mac, ip);
   server.begin();
@@ -216,7 +227,22 @@ void setup() {
 
 
 void loop() {
-   // listen for incoming clients
+  // listen for incoming clients
+  if (switchPress) {
+    if (!didKeyDown) {
+      // !!!!! show next item
+    }
+    switchPress = 0;
+    didKeyDown = false;
+  }
+  if (switchDown >= 32) {
+    if (!didKeyDown)
+      dim = !dim;
+      for (byte line=0; line<2; line++)   
+        commandLED(line, dim?HT16K33_BRIGHT_MIN:HT16K33_BRIGHT_MAX);  
+      didKeyDown = true;
+  }
+
   client = server.available();
   if (client) {
     // an http request ends with a blank line
@@ -285,7 +311,7 @@ void loop() {
       tachDidPulse = false;
     else
       memset(rpm, 0, sizeof(rpm));
-    engineRunning = scaleValue(&vtS, readSensor(&vtS)) > 130 || rpm > 0; // greater than 13.0 volts means engine is running
+    engineRunning = scaleValue(&vtS, readSensor(&vtS)) > 130; // greater than 13.0 volts means engine is running
 
     if (engineRunning) {
       if (--hobbsCount == 0) {
