@@ -26,7 +26,7 @@ const char *red = "red";
 
 //                   sensor-type,  pin, decimal, voffset,      vfactor,          moffset,          mfactor, lowAlarm, lowAlert, highAlert, highAlarm
 const Sensor vtS = { st_volts,       0,       1,       0, MX(ADCtoV10), GB(100*V10toADC), GMX(60*V10toADC),      110,      130,      9999,       160 };
-const Sensor opS = { st_r240to33,    1,       0,       0,      MX(0.1),                0,          MX(1.0),       25,       55,        95,        95 }; 
+const Sensor opS = { st_r240to33,    1,       0,       0,      MX(0.1),                0,          MX(1.0),       25,       55,      9999,        95 }; 
 const Sensor otS = { st_thermistorF, 2,       0,       0,       MX(.1),        GB(50*10),      GMX(200*10),       -1,      140,      9999,       250 };
 const Sensor fpS = { st_r240to33,    3,       1,       0,      MX(0.1),                0,          MX(1.0),        5,       20,        60,        80 };
 const Sensor flS = { st_r240to33,    4,       1,       0,     MX(0.16),                0,          MX(1.0),       25,       50,      9999,       999 };
@@ -93,10 +93,14 @@ const Gauge gauges[] = {
 };
 
 // Guage layout for aux display
-const AuxDisplay auxdisplay[2] = {
-  { .sensor = {&taS, 0} },
-  { .sensor = {&taS, 0} }
-
-
+#define XTEXT(a,b,c,d) { .literal = {LED_TEXT(a,b,c,d)} }   // literals must not be blank in last 2 letters
+#define XSENSOR(x)     { .sensor = {&x, 0} }    
+const AuxDisplay auxdisplay[] = {
+  XTEXT( ,b,A,t), XSENSOR(vtS),  
+  XSENSOR(taS),   XSENSOR(flS),
+  XTEXT( , ,O,P), XSENSOR(opS),  
+  XTEXT( , ,O,t), XSENSOR(otS),  
+  XTEXT( , ,F,P), XSENSOR(fpS),  
+  XTEXT( ,A,L,t), XSENSOR(vtS),  
 };
 

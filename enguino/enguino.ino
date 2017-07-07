@@ -10,15 +10,14 @@
 
 #include "persist.h"
 
-// configuration of sensors and layout of the gauges
-#include "config.h"
+// Update the first 3 numbers of this IP address to your local network
+// for testing but restore it to (192, 168, 0, 111) when finished.
+IPAddress ip(192, 168, 0, 111);
 
 // A made up MAC address. Only real critera is the first bytes 2 lsb must be 1 (for local) and 0 (for unicast).
 byte mac[] = {  0xDE, 0x15, 0x24, 0x33, 0x42, 0x51 };
 
-// Update the first 3 numbers of this IP address to your local network
-// for testing but restore it to (192, 168, 0, 111) when finished.
-IPAddress ip(192, 168, 0, 111);
+int readSensor(const Sensor *s, byte n = 0);
 
 // #define RANDOM_SENSORS 1
 
@@ -29,7 +28,6 @@ IPAddress ip(192, 168, 0, 111);
 EthernetServer server(80);
 EthernetClient client;
 
-int readSensor(const Sensor *s, byte n = 0);
 bool leanMode;
 int peakEGT[4];
 byte hobbsCount = 90;
@@ -42,6 +40,13 @@ volatile byte rpmP;
 
 bool dim;
 bool didKeyDown;
+byte auxScreen = 2;
+
+// printLED functions for the auxiliary display
+#include "printLED.h"
+
+// configuration of sensors and layout of the gauges
+#include "config.h"
 
 // Performance 'print' functions to ethernet 'client' (includes flush)
 #include "printEthernet.h"
@@ -51,11 +56,10 @@ bool didKeyDown;
 // Implementation for printPrefix and pringGauge
 #include "printGauges.h"
 
-// printLED functions for the auxiliary display
-#include "printLED.h"
-
 // Measure thermocouple tempertaures in the background
 #include "tcTemp.h"
+
+
 
 InterpolateTable thermistor = {
   64, 32,
@@ -195,6 +199,61 @@ void tachIRQ() {
   tachDidPulse = true;
 }
 
+bool isLow(Sensor *s, int v) {
+  return v < s->lowAlarm || v < s->lowAlert;
+}
+
+bool isHigh(Sensor *s, int v) {
+  return v > s->highAlarm || v > s->highAlert;
+}
+
+bool isAlarm(Sensor *s, int v) {
+  return v < s->lowAlarm || v > s->highAlarm; 
+}
+
+void auxDisplay(byte i) {
+  int v;
+  Sensor *s = 0;
+  for (signed char n=1; n>=0; n--) {
+    AuxDisplay *a = auxdisplay+(i+n); 
+    if (a->sensor.zero == 0) {
+      commandLED(n, HT16K33_BLINK_OFF);
+      s = a->sensor.s;
+      if (s == &flS) {
+        printLEDFuel(scaleValue(s, readSensor(s,0)), scaleValue(s, readSensor(s,1)));    // Show the dual fuel gauge
+        s = 0;    // fuel gauge stands alone, doesn't have label to blink
+      }
+      else {
+        v = scaleValue(s, readSensor(s));
+        printLED(n,v, s->decimal);
+      }
+    } 
+    else {
+      byte t[4];
+      memcpy(t,a->literal,4);
+      if (s) {
+        if (isLow(s, v) || isHigh(s, v)) {
+          if (t[1] == 0) {
+            t[1] = t[2];
+            t[2] = t[3];
+            t[3] = LED__;  
+          }
+          t[0] = t[1];
+          t[1] = t[2];
+          t[2] = t[3];
+          t[3] = isLow(s,v) ? LED_L : LED_H;
+        }
+        if (isAlarm(s, v)) {
+          commandLED(n, HT16K33_BLINK_1HZ);
+          goto blink;
+        }
+      }
+      commandLED(n, HT16K33_BLINK_OFF);
+blink:
+      printLED(n,t);
+    }
+  }
+}
 
 
 
@@ -210,8 +269,7 @@ void setup() {
   printLED(0,LED_TEXT(h,o,b,b));
   printLED(1,ee_status.hobbs>>2,1);  
   delay(1000);
-  printLED(0,LED_TEXT( ,b,A,t));
-  printLED(1,scaleValue(&vtS, readSensor(&vtS)),1);  
+  auxDisplay(0);
   delay(1000);
   
   attachInterrupt(digitalPinToInterrupt(2),tachIRQ,RISING);
@@ -230,7 +288,9 @@ void loop() {
   // listen for incoming clients
   if (switchPress) {
     if (!didKeyDown) {
-      // !!!!! show next item
+      auxScreen += 2;
+      if (auxScreen >= sizeof(auxdisplay)/sizeof(auxdisplay[0]))
+        auxScreen = 2;
     }
     switchPress = 0;
     didKeyDown = false;
@@ -327,7 +387,6 @@ void loop() {
     eighthSecondCount -= 8;
 
 halfSecond:
-    printLED(0,scaleValue(&taS, readSensor(&taS)),0);
-    printLEDFuel(scaleValue(&flS, readSensor(&flS,0)), scaleValue(&flS, readSensor(&flS,1)));    
+    auxDisplay(auxScreen);  
   }
 }

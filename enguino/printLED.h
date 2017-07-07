@@ -52,19 +52,26 @@
 #define LED_  0x0   // blank
 
 #define LED_A 0x77
+#define LED_a 0x77
 #define LED_b 0x7c
 #define LED_C 0x39
 #define LED_D 0x5e
+#define LED_d 0x5e
 #define LED_E 0x79
 #define LED_F 0x71
+#define LED_f 0x71
 #define LED_H 0x76
 #define LED_h 0x74
 #define LED_i 0x4
 #define LED_L 0x38
 #define LED_n 0x54
+#define LED_O 0x3F
 #define LED_o 0x5c
 #define LED_P 0x73
 #define LED_r 0x50
+#define LED_S 0x6D
+#define LED_s 0x6D
+#define LED_T 0x78
 #define LED_t 0x78
 #define LED_U 0x3e
 
