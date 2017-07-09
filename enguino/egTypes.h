@@ -14,13 +14,6 @@ typedef struct {
 } InterpolateTable;
 
 enum SensorType {st_r240to33, st_thermistorF, st_thermistorC, st_volts, st_k_type_tcF, st_j_type_tcF, st_k_type_tcC, st_j_type_tcC, st_tachometer, st_fuel_flow};
-// st_r240to33 -     0 - 1000      proportional resistive sensor
-// st_thermistor -   0 - 1500      degrees C. in tenths
-// st_volts -        0 - 1023      ADC units 4.88 mV/per
-// st_k_type_tc -    0 - 4000      0-1000 degrees C. in quarters
-// st_j_type_tc -    0 - 4000      0-1000 degrees C. in quarters
-// st_tachometer
-// st_fuel_flow
 
 // for K style in deg. C, use a multiply of   4096  (0.25),                       offset 0
 // for K style in deg. F, use a multiplier of 7373  (0.25 * 1.8),                 offset -32

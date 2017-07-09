@@ -40,6 +40,7 @@ volatile byte rpmP;
 
 bool dim;
 bool didKeyDown;
+bool didChangeDim;
 byte auxScreen = 2;
 
 // printLED functions for the auxiliary display
@@ -115,7 +116,7 @@ int readSensor(const Sensor *s, byte n = 0) {
       int r[4];
       memcpy(r, rpm, sizeof(rpm));
       interrupts();
-      sort(r, sizeof(r)/sizeof(int));
+      sort(r, N(r));
       v = (r[1]+r[2])>>1; 
     }
     else if (p < 16) { 
@@ -133,7 +134,7 @@ int readSensor(const Sensor *s, byte n = 0) {
       v = tcTemp[p-16];
       interrupts();
       if (t == st_j_type_tcC || t == st_j_type_tcF)
-       v = int(multiply(v - tcTemp[8], 25599) >> 15) + tcTemp[8]; 
+       v = multiplyAndScale(v - tcTemp[8], 25599, 15) + tcTemp[8]; 
       if (t == st_k_type_tcF || t == st_j_type_tcF)
         toF = 32 * 4;
     }
@@ -194,7 +195,7 @@ eeSettings:
 
 void tachIRQ() {
   unsigned long newTachTime = micros();
-  rpm[rpmP++ & 3] = (60000000L/24) / (newTachTime - lastTachTime);
+  rpm[rpmP++ & 3] = (60000000L/TACH_DIVIDER) / (newTachTime - lastTachTime);
   lastTachTime = newTachTime;
   tachDidPulse = true;
 }
@@ -211,11 +212,11 @@ bool isAlarm(Sensor *s, int v) {
   return v < s->lowAlarm || v > s->highAlarm; 
 }
 
-void auxDisplay(byte i) {
+void auxDisplay(byte inx) {
   int v;
   Sensor *s = 0;
   for (signed char n=1; n>=0; n--) {
-    AuxDisplay *a = auxdisplay+(i+n); 
+    AuxDisplay *a = auxdisplay+(inx+n); 
     if (a->sensor.zero == 0) {
       commandLED(n, HT16K33_BLINK_OFF);
       s = a->sensor.s;
@@ -262,21 +263,20 @@ void setup() {
 //    while (!Serial) 
 //      ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
 
+  pinMode(0, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(2),tachIRQ,RISING);
+
+  delay(1); // delay to allow LED display chip to startup
   eeInit();  
   tcTempSetup();
-  // setup LED last to allow 1mS for HT16K33
   printLEDSetup();
   printLED(0,LED_TEXT(h,o,b,b));
   printLED(1,ee_status.hobbs>>2,1);  
   delay(1000);
   auxDisplay(0);
   delay(1000);
-  
-  attachInterrupt(digitalPinToInterrupt(2),tachIRQ,RISING);
-
-  pinMode(0, INPUT_PULLUP);
-//  attachInterrupt(digitalPinToInterrupt(0),switchIRQ,FALLING);
-  
+  switchPress = 0;
+   
   // start the Ethernet connection and the server:
   Ethernet.begin(mac, ip);
   server.begin();
@@ -289,18 +289,23 @@ void loop() {
   if (switchPress) {
     if (!didKeyDown) {
       auxScreen += 2;
-      if (auxScreen >= sizeof(auxdisplay)/sizeof(auxdisplay[0]))
+      if (auxScreen >= N(auxdisplay))
         auxScreen = 2;
     }
     switchPress = 0;
+    didChangeDim = false;
     didKeyDown = false;
   }
-  if (switchDown >= 32) {
-    if (!didKeyDown)
-      dim = !dim;
-      for (byte line=0; line<2; line++)   
-        commandLED(line, dim?HT16K33_BRIGHT_MIN:HT16K33_BRIGHT_MAX);  
-      didKeyDown = true;
+  if (switchDown >= 32 && !didChangeDim) {
+    dim = !dim;
+    for (byte line=0; line<2; line++)   
+      commandLED(line, dim?HT16K33_BRIGHT_MIN:HT16K33_BRIGHT_MAX); 
+    didChangeDim = true; 
+    didKeyDown = true;
+  }
+  else if (switchDown >= 8) {
+    auxScreen = 2;
+    didKeyDown = true;
   }
 
   client = server.available();

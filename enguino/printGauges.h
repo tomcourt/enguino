@@ -1,7 +1,7 @@
 /// Implementation for printPrefix and pringGauge
 
 int scaleMark(const Sensor *s, int val) {
-  int mark = int(multiply(s->mfactor, val+s->moffset) >> divisor);
+  int mark = multiplyAndScale(s->mfactor, val+s->moffset, divisor);
   if (mark < 0)
     mark = 0;
   if (mark > 1000)
@@ -12,7 +12,7 @@ int scaleMark(const Sensor *s, int val) {
 int scaleValue(const Sensor *s, int val) {
   if (val == FAULT)
     return val;
-  return int(multiply(s->vfactor,val) >> divisor) + s->voffset;
+  return multiplyAndScale(s->vfactor,val, divisor) + s->voffset;
 }
 
 // vertical gauge is

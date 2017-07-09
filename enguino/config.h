@@ -1,6 +1,8 @@
 // Uncommenting the following line shows a box around each instrumment and around the viewable area of the page. Use to help arrange gauges.
 // #define BOUNDING_BOX
 
+#define TACH_DIVIDER 4
+
 const char *green = "green";
 const char *yellow = "yellow";
 const char *red = "red";
@@ -8,12 +10,12 @@ const char *red = "red";
 #define divisor 13  // 1<<13 = 8192, this allows factors between -2.0 to 1.999
                     // for the 0-1023 ADC values, multiply range by 8 for full scale
 
-#define MX(x)       (int)((x)*(1<<divisor) + 0.5)
-#define GMX(range)  (int)(1000.0 / (range) * (1<<divisor) + 0.5)
-#define GB(low)     (int)(-((low) + 0.5))  
-#define ADCtoDivV   (5.0/1023.0)      // multiply this by adc input to get DC volts
-#define ADCtoV10    (40 * ADCtoDivV)  // 1:4 voltage divider  
-#define V10toADC    (1/(40 * ADCtoDivV))  // 1:4 voltage divide  
+#define MX(x)        (int)((x)*(1<<divisor) + 0.5) // expressed as floating point converted to integer m
+#define GMX(range)   (int)(1000.0 / (range) * (1<<divisor) + 0.5)
+#define GB(low)      (int)(-((low) + 0.5))  
+#define ADCtoDivV    (5.0/1023.0)      // multiply this by adc input to get DC volts
+#define ADCtoV10     (40 * ADCtoDivV)  // 1:4 voltage divider, results in tenths of a volt 
+#define V10toADC     (1/(40 * ADCtoDivV))  // 1:4 voltage divide  
 
 // Sensor defintions and scaling
 // -----------------------------
@@ -24,14 +26,27 @@ const char *red = "red";
 // The MX macro converts a floating point factor for m into an integer factor. The gauge pointers vary from 0 to 1000. 
 // Use GB() and GMX to set the graphs b and m values based on lowest input and input range (hi-low) respectively. 
 
+//   sensor-type    range   
+// --------------  --------
+// st_r240to33     0 - 1000   proportional resistive sensor
+// st_thermistorC  0 - 1500   degrees C. in tenths
+// st_thermistorF 32 - 2732   degrees F. in tenths
+// st_volts        0 - 1023   ADC units 4.88 mV/per
+// st_k_type_tcC   0 - 4000   0-1000 degrees C. in quarters
+// st_j_type_tcC   0 - 4000   0-1000 degrees C. in quarters
+// st_k_type_tcF   0 - 4000   32-1832 degrees F. in quarters
+// st_j_type_tcF   0 - 4000   32-1832 degrees F. in quarters
+// st_tachometer
+// st_fuel_flow
+
 //                   sensor-type,  pin, decimal, voffset,      vfactor,          moffset,          mfactor, lowAlarm, lowAlert, highAlert, highAlarm
 const Sensor vtS = { st_volts,       0,       1,       0, MX(ADCtoV10), GB(100*V10toADC), GMX(60*V10toADC),      110,      130,      9999,       160 };
-const Sensor opS = { st_r240to33,    1,       0,       0,      MX(0.1),                0,          MX(1.0),       25,       55,      9999,        95 }; 
+const Sensor opS = { st_r240to33,    1,       0,       0,       MX(.1),                0,           MX(1.),       25,       55,      9999,        95 }; 
 const Sensor otS = { st_thermistorF, 2,       0,       0,       MX(.1),        GB(50*10),      GMX(200*10),       -1,      140,      9999,       250 };
-const Sensor fpS = { st_r240to33,    3,       1,       0,      MX(0.1),                0,          MX(1.0),        5,       20,        60,        80 };
-const Sensor flS = { st_r240to33,    4,       1,       0,     MX(0.16),                0,          MX(1.0),       25,       50,      9999,       999 };
+const Sensor fpS = { st_r240to33,    3,       1,       0,      MX(.15),                0,           MX(1.),        5,       20,        60,        80 };
+const Sensor flS = { st_r240to33,    4,       1,       0,      MX(.16),                0,           MX(1.),       25,       50,      9999,       999 };
 const Sensor taS = { st_tachometer, 15,       0,       0,       MX(1.),                0,        GMX(3000),       -1,      500,      9999,      2700 };
-const Sensor maS = { st_volts,      -1,       1,     100,         2000,                0,             8008,       -1,       -1,      9999,      9999 }; 
+const Sensor maS = { st_volts,      -1,       1,     100,         2000,                0,           MX(1.),       -1,       -1,      9999,      9999 }; 
 const Sensor chS = { st_k_type_tcF, 16,       0,       0,      MX(.25),        GB(100*4),       GMX(400*4),       -1,      150,       400,       500 };  
 const Sensor egS = { st_k_type_tcF, 20,       0,       0,      MX(.25),       GB(1000*4),       GMX(600*4),       -1,       -1,      9999,      9999 };
 
@@ -93,7 +108,8 @@ const Gauge gauges[] = {
 };
 
 // Guage layout for aux display
-#define XTEXT(a,b,c,d) { .literal = {LED_TEXT(a,b,c,d)} }   // literals must not be blank in last 2 letters
+// Change layout to literal, sensor, sensor.  Where a sensor value is displayed in the top line if literal is blank, otherwise sensor is used for alarm state of top line
+#define XTEXT(a,b,c,d) { .literal = {LED_TEXT(a,b,c,d)} }   // literals must have characters in one of the last 2 letters
 #define XSENSOR(x)     { .sensor = {&x, 0} }    
 const AuxDisplay auxdisplay[] = {
   XTEXT( ,b,A,t), XSENSOR(vtS),  

@@ -58,13 +58,12 @@ asm volatile ( \
 )
 
 // multiply 16 x 16 signed values and return the 32 bit result
+// this is a smaller and faster version of: (long(a) * long(b);
 long multiply(int a, int b) {
   long res;
 
   MultiS16X16to32(res, a, b);
   return res;
-  // this is a smaller and faster version of:
-  // return (long(a) * long(b);
 }
 
 int multiplyAndScale(int a, int b, byte shift) {
@@ -85,9 +84,8 @@ int interpolate(const InterpolateTable *table, int value) {
     if (--i == 0)
       return FAULT;
     int x1 = x + (1 << *diff);
-    if (value < x1) {
+    if (value < x1) 
       return int((multiply(*result,x1-value) + multiply(result[1], value-x)) >> *diff);
-    }
     x = x1;
     diff++;
     result++;
