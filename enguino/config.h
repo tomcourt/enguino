@@ -7,24 +7,27 @@ const char *green = "green";
 const char *yellow = "yellow";
 const char *red = "red";
 
-#define divisor 13  // 1<<13 = 8192, this allows factors between -2.0 to 1.999
-                    // for the 0-1023 ADC values, multiply range by 8 for full scale
+#define divisor 13  // 1<<13 = 8192
 
-#define MX(x)        (int)((x)*(1<<divisor) + 0.5) // expressed as floating point converted to integer m
-#define GMX(range)   (int)(1000.0 / (range) * (1<<divisor) + 0.5)
-#define GB(low)      (int)(-((low) + 0.5))  
-#define ADCtoDivV    (5.0/1023.0)      // multiply this by adc input to get DC volts
-#define ADCtoV10     (40 * ADCtoDivV)  // 1:4 voltage divider, results in tenths of a volt 
-#define V10toADC     (1/(40 * ADCtoDivV))  // 1:4 voltage divide  
+#define SCALE(factor)   (int)((factor)*(1<<divisor) + 0.5)  // Converts a floating point factor to integer
+#define GRNG(range)     SCALE(1000.0/(range))               // Used for gfactor, given range returns gfactor that will result in 0-1000 
+#define GMIN(low)       (int)(-((low) + 0.5))  
+#define ADCtoV          (5.0/1024.0)                        // multiply this by adc input to get DC volts
+#define toV             (40 * ADCtoV)                       // 1:4 voltage divider, V/10 = adc*toV  
+#define fromV           (1/toV)                             // 1:4 voltage divide, (V/10) * fromV = adc  
+// For Van's gauges or other 240-33 ohm gauges that have a linear voltage response instead of linear resistance use st_volts with the following: 
+#define RVoff           -495                    // 495 is when ADC when gauge reads 0
+#define RVscale         (1000.0/(124+RVoff))    // 124 is when ADC when gauge reads max
+#define RVSCALE(factor) SCALE((factor)*RVscale)
+#define RVRNG(range)    SCALE(RVscale*(range)/1000.0)
 
 // Sensor defintions and scaling
 // -----------------------------
-// The sensors numeric values, y in the following forumala, are scaled as follow: y = m * x + b.
-// Sensors gauge position are scaled a bit differerently with this formuala: y = (m + b) * x
+// The sensors are scaled using the following formula, are scaled as follow: y = factor * (adc + offset).
 // All of these numbers must be integers. Factors are represented as a ratio with an integer numerator and a denominator of 8192.
-// Some numberic values are multipled by 10 and then have a decimal point added when displayed. 
-// The MX macro converts a floating point factor for m into an integer factor. The gauge pointers vary from 0 to 1000. 
-// Use GB() and GMX to set the graphs b and m values based on lowest input and input range (hi-low) respectively. 
+// Some numeric values are multipled by 10 and then have a decimal point added when displayed. 
+// SCALE(1.) returns the raw values (ADC, RPM's). SCALE(range/full_scale) returns a value from 0 to range.
+// The gauge pointers vary from 0 to 1000. Use GMIN() and GRNG to set the graphs b and m values based on lowest input and input range (hi-low) respectively. 
 
 //   sensor-type    range   
 // --------------  --------
@@ -39,16 +42,16 @@ const char *red = "red";
 // st_tachometer
 // st_fuel_flow
 
-//                   sensor-type,  pin, decimal, voffset,      vfactor,          moffset,          mfactor, lowAlarm, lowAlert, highAlert, highAlarm
-const Sensor vtS = { st_volts,       0,       1,       0, MX(ADCtoV10), GB(100*V10toADC), GMX(60*V10toADC),      110,      130,      9999,       160 };
-const Sensor opS = { st_r240to33,    1,       0,       0,       MX(.1),                0,           MX(1.),       25,       55,      9999,        95 }; 
-const Sensor otS = { st_thermistorF, 2,       0,       0,       MX(.1),        GB(50*10),      GMX(200*10),       -1,      140,      9999,       250 };
-const Sensor fpS = { st_r240to33,    3,       1,       0,      MX(.15),                0,           MX(1.),        5,       20,        60,        80 };
-const Sensor flS = { st_r240to33,    4,       1,       0,      MX(.16),                0,           MX(1.),       25,       50,      9999,       999 };
-const Sensor taS = { st_tachometer, 15,       0,       0,       MX(1.),                0,        GMX(3000),       -1,      500,      9999,      2700 };
-const Sensor maS = { st_volts,      -1,       1,     100,         2000,                0,           MX(1.),       -1,       -1,      9999,      9999 }; 
-const Sensor chS = { st_k_type_tcF, 16,       0,       0,      MX(.25),        GB(100*4),       GMX(400*4),       -1,      150,       400,       500 };  
-const Sensor egS = { st_k_type_tcF, 20,       0,       0,      MX(.25),       GB(1000*4),       GMX(600*4),       -1,       -1,      9999,      9999 };
+//                   sensor-type,  pin, decimal, voffset,         vfactor,            goffset,           gfactor, lowAlarm, lowAlert, highAlert, highAlarm
+const Sensor vtS = { st_volts,       0,       1,       0, SCALE(200/1024.0),  GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
+const Sensor opS = { st_volts,       1,       0,   RVoff,      RVRNG(100),              RVoff,       RVSCALE(1.),       25,       55,      9999,        95 }; 
+const Sensor otS = { st_thermistorF, 2,       0,       0,       SCALE(.1),        GMIN(50*10),      GRNG(200*10),       -1,      140,      9999,       250 };
+const Sensor fpS = { st_volts,       3,       1,   RVoff,      RVRNG(150),              RVoff,      RVSCALE(1.5),        5,       20,        60,        80 };
+const Sensor flS = { st_volts,       4,       1,   RVoff,      RVRNG(160),              RVoff,       RVSCALE(1.),       25,       50,      9999,       999 };
+const Sensor taS = { st_tachometer, 15,       0,       0,       SCALE(1.),                  0,        GRNG(3000),       -1,      500,      9999,      2700 };
+const Sensor maS = { st_volts,      -1,       1,     100,            2000,                  0,         SCALE(1.),       -1,       -1,      9999,      9999 }; 
+const Sensor chS = { st_k_type_tcF, 16,       0,       0,      SCALE(.25),        GMIN(100*4),       GRNG(400*4),       -1,      150,       400,       500 };  
+const Sensor egS = { st_k_type_tcF, 20,       0,       0,      SCALE(.25),       GMIN(1000*4),       GRNG(600*4),       -1,       -1,      9999,      9999 };
 
 // Labels
 // ------

@@ -11,6 +11,7 @@
 
 volatile int tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal reference temp, disable IRQ's to access these
 
+volatile bool eighthSecondTick;
 volatile byte eighthSecondCount = 0;
 
 volatile byte switchDown;   // use this for detecting a key held down for a period of time
@@ -100,6 +101,7 @@ SIGNAL(TIMER0_COMPA_vect)
     }
     ms = 255; // ++ will make this 0 
     eighthSecondCount++;
+    eighthSecondTick = true;
   }
   ms++;
 }

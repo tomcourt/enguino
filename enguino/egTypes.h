@@ -26,8 +26,8 @@ typedef struct {
   byte decimal;   // add decimal point 'decimal' positons from the right (0 is integer)
   int voffset;    // used to display reading, int_reading has 'decimal' point shifted right
   int vfactor;    // int_reading = multiply * sensor >> divisor + offset
-  int moffset;    // used to calculate marker position
-  int mfactor;    // 0-4000 vertical gauge, 0-8000 horizontal gauge, 0-2400 round gauge
+  int goffset;    // used to calculate gauge marker position
+  int gfactor;    // 0-4000 vertical gauge, 0-8000 horizontal gauge, 0-2400 round gauge
   int lowAlarm;
   int lowAlert;
   int highAlert;

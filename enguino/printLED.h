@@ -171,8 +171,8 @@ void printLED(byte line, byte *txt) {
 // print the fuel gauge (e.g. 2.5:17)  (left tank : right tank)
 void printLEDFuel(int left, int right) {
    memset(ledBuffer, 0, sizeof(ledBuffer));
+   printLEDRawHalfDigits(2, left);
    printLEDRawHalfDigits(4, right);
-   printLEDRawHalfDigits(2, right);
    ledBuffer[5] = LED_COLON;    
    writeLED(1);  
 }
