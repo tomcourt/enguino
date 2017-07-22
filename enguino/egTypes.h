@@ -58,9 +58,11 @@ typedef struct {
 
 enum GaugeColor { gc_green, gc_yellow, gc_red };
 
-typedef union {
+typedef struct {
   byte literal[4];
-  struct { Sensor *s; word zero; } sensor;
+  Sensor *sensor[2];
+  signed char alarm;
+  signed char caution;
 } AuxDisplay;
 
 

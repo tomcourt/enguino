@@ -1,7 +1,15 @@
 // Uncommenting the following line shows a box around each instrumment and around the viewable area of the page. Use to help arrange gauges.
 // #define BOUNDING_BOX
 
+// !!! Add conditional code to support a single fuel tank, find all instances of fuelS
+#define DUAL_FUEL_TANK 1
+
 #define TACH_DIVIDER 4
+
+// Exceed any of these and engine will be considered 'running'. Hobbs time will accumulate and engine alerts will appear. Setting to 0 will ignore that sensor
+#define RUN_VOLT 130
+#define RUN_OILP 10
+#define RUN_TACH 200
 
 const char *green = "green";
 const char *yellow = "yellow";
@@ -11,6 +19,7 @@ const char *red = "red";
 
 #define SCALE(factor)   (int)((factor)*(1<<divisor) + 0.5)  // Converts a floating point factor to integer
 #define GRNG(range)     SCALE(1000.0/(range))               // Used for gfactor, given range returns gfactor that will result in 0-1000 
+#define GARNG(range)     SCALE(1024.0/(range))               // Used for gfactor, given range returns gfactor that will result in 0-1000 
 #define GMIN(low)       (int)(-((low) + 0.5))  
 #define ADCtoV          (5.0/1024.0)                        // multiply this by adc input to get DC volts
 #define toV             (40 * ADCtoV)                       // 1:4 voltage divider, V/10 = adc*toV  
@@ -28,6 +37,7 @@ const char *red = "red";
 // Some numeric values are multipled by 10 and then have a decimal point added when displayed. 
 // SCALE(1.) returns the raw values (ADC, RPM's). SCALE(range/full_scale) returns a value from 0 to range.
 // The gauge pointers vary from 0 to 1000. Use GMIN() and GRNG to set the graphs b and m values based on lowest input and input range (hi-low) respectively. 
+// Manifold pressure sensor = P(inch) = V(full) * 32.811 + 3.117 or V = (P-3.117)/32.811
 
 //   sensor-type    range   
 // --------------  --------
@@ -42,16 +52,16 @@ const char *red = "red";
 // st_tachometer
 // st_fuel_flow
 
-//                   sensor-type,  pin, decimal, voffset,         vfactor,            goffset,           gfactor, lowAlarm, lowAlert, highAlert, highAlarm
-const Sensor vtS = { st_volts,       0,       1,       0, SCALE(200/1024.0),  GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
-const Sensor opS = { st_volts,       1,       0,   RVoff,      RVRNG(100),              RVoff,       RVSCALE(1.),       25,       55,      9999,        95 }; 
-const Sensor otS = { st_thermistorF, 2,       0,       0,       SCALE(.1),        GMIN(50*10),      GRNG(200*10),       -1,      140,      9999,       250 };
-const Sensor fpS = { st_volts,       3,       1,   RVoff,      RVRNG(150),              RVoff,      RVSCALE(1.5),        5,       20,        60,        80 };
-const Sensor flS = { st_volts,       4,       1,   RVoff,      RVRNG(160),              RVoff,       RVSCALE(1.),       25,       50,      9999,       999 };
-const Sensor taS = { st_tachometer, 15,       0,       0,       SCALE(1.),                  0,        GRNG(3000),       -1,      500,      9999,      2700 };
-const Sensor maS = { st_volts,      -1,       1,     100,            2000,                  0,         SCALE(1.),       -1,       -1,      9999,      9999 }; 
-const Sensor chS = { st_k_type_tcF, 16,       0,       0,      SCALE(.25),        GMIN(100*4),       GRNG(400*4),       -1,      150,       400,       500 };  
-const Sensor egS = { st_k_type_tcF, 20,       0,       0,      SCALE(.25),       GMIN(1000*4),       GRNG(600*4),       -1,       -1,      9999,      9999 };
+//                      sensor-type,  pin, decimal, voffset,         vfactor,            goffset,           gfactor, lowAlarm, lowAlert, highAlert, highAlarm
+const Sensor voltS =  { st_volts,       0,       1,       0, SCALE(200/1024.0),  GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
+const Sensor oilpS =  { st_volts,       1,       0,   RVoff,      RVRNG(100),              RVoff,       RVSCALE(1.),       25,       55,      9999,        95 }; 
+const Sensor oiltS =  { st_thermistorF, 2,       0,       0,       SCALE(.1),        GMIN(50*10),      GRNG(200*10),       -1,      140,      9999,       250 };
+const Sensor fuelpS = { st_volts,       3,       1,   RVoff,      RVRNG(150),              RVoff,      RVSCALE(1.5),        5,       20,        60,        80 };
+const Sensor fuellS = { st_volts,       4,       1,   RVoff,      RVRNG(160),              RVoff,       RVSCALE(1.),       25,       50,      9999,       999 };
+const Sensor tachS =  { st_tachometer, 15,       0,       0,       SCALE(1.),                  0,        GRNG(3000),       -1,      500,      9999,      2700 };
+const Sensor mapS =   { st_volts,      -1,       1,      31,SCALE(328.11/1024),   GMIN(.21*1024),  GARNG(25/32.811),       -1,       -1,      9999,      9999 }; 
+const Sensor chtS =   { st_k_type_tcF, 16,       0,       0,      SCALE(.25),        GMIN(100*4),       GRNG(400*4),       -1,      150,       400,       500 };  
+const Sensor egtS =   { st_k_type_tcF, 20,       0,       0,      SCALE(.25),       GMIN(1000*4),       GRNG(600*4),       -1,       -1,      9999,      9999 };
 
 // Labels
 // ------
@@ -98,28 +108,29 @@ int    chRP[] = { 1000,   6000,   7940,   8000    };
 #define bank 3500   // bank of misc vertical gauges
 const Gauge gauges[] = {
   //  x,      y,  style,     label1, label2, units,  labVal,  labPt,     num, regClr, regPt,     num, sensor
-  {bank+0,    0,  gs_vert,   "OIL",  "PRES", "psi",    opLV,   opLP, N(opLV),   opRC,  opRP, N(opRC),  &opS},
-  {bank+1750, 0,  gs_vert,   "OIL",  "TEMP", "&deg;F", otLV,   otLP, N(otLV),   otRC,  otRP, N(otRC),  &otS},
-  {bank+3500, 0,  gs_vert,   "",     "VOLT", "volt",   vtLV,   vtLP, N(vtLV),   vtRC,  vtRP, N(vtRC),  &vtS},
-  {bank+5250, 0,  gs_vert,   "FUEL", "PRES", "psi",    fpLV,   fpLP, N(fpLV),   fpRC,  fpRP, N(fpRC),  &fpS},
-  {bank+7000, 0,  gs_pair,   "FUEL", "",     "gal",    flLV,   flLP, N(flLV),   flRC,  flRP, N(flRC),  &flS}, 
-  {100,       0,  gs_round,  "TACH", "",     "rpm",    0,      0,    0,         taRC,  taRP, N(taRC),  &taS},
-  {100,    3200,  gs_round,  "MP",   "",     "in-hg",  0,      0,    0,         maRC,  maRP, N(maRC),  &maS},
-  {2950,    6150, gs_horiz,  "CHT",  "",     "",       chLV,   chLP, N(chLV),   chRC,  chRP, N(chRC),  &chS},
-  {2950,    6150, gs_aux,    "EGT",  "",     "",       egLV,   egLP, N(egLV),      0,     0,       0,  &egS},
+  {bank+0,    0,  gs_vert,   "OIL",  "PRES", "psi",    opLV,   opLP, N(opLV),   opRC,  opRP, N(opRC),  &oilpS},
+  {bank+1750, 0,  gs_vert,   "OIL",  "TEMP", "&deg;F", otLV,   otLP, N(otLV),   otRC,  otRP, N(otRC),  &oiltS},
+  {bank+3500, 0,  gs_vert,   "",     "VOLT", "volt",   vtLV,   vtLP, N(vtLV),   vtRC,  vtRP, N(vtRC),  &voltS},
+  {bank+5250, 0,  gs_vert,   "FUEL", "PRES", "psi",    fpLV,   fpLP, N(fpLV),   fpRC,  fpRP, N(fpRC),  &fuelpS},
+  {bank+7000, 0,  gs_pair,   "FUEL", "",     "gal",    flLV,   flLP, N(flLV),   flRC,  flRP, N(flRC),  &fuellS}, 
+  {100,       0,  gs_round,  "TACH", "",     "rpm",    0,      0,    0,         taRC,  taRP, N(taRC),  &tachS},
+  {100,    3200,  gs_round,  "MP",   "",     "in-hg",  0,      0,    0,         maRC,  maRP, N(maRC),  &mapS},
+  {2950,    6150, gs_horiz,  "CHT",  "",     "",       chLV,   chLP, N(chLV),   chRC,  chRP, N(chRC),  &chtS},
+  {2950,    6150, gs_aux,    "EGT",  "",     "",       egLV,   egLP, N(egLV),      0,     0,       0,  &egtS},
   {800,     6650, gs_infobox,"",     "",     "",       0,      0,    0,            0,     0,       0,     0}
 };
 
 // Guage layout for aux display
-// Change layout to literal, sensor, sensor.  Where a sensor value is displayed in the top line if literal is blank, otherwise sensor is used for alarm state of top line
-#define XTEXT(a,b,c,d) { .literal = {LED_TEXT(a,b,c,d)} }   // literals must have characters in one of the last 2 letters
-#define XSENSOR(x)     { .sensor = {&x, 0} }    
-const AuxDisplay auxdisplay[] = {
-  XTEXT( ,b,A,t), XSENSOR(vtS),  
-  XSENSOR(taS),   XSENSOR(flS),
-  XTEXT( , ,O,P), XSENSOR(opS),  
-  XTEXT( , ,O,t), XSENSOR(otS),  
-  XTEXT( , ,F,P), XSENSOR(fpS),  
-  XTEXT( ,A,L,t), XSENSOR(vtS),  
+// Layout is literal, top-sensor, bottom-sensor. Sensor value is displayed in the top line if literal is blank, otherwise sensor is used for alarm state of top line
+#define AUX(a,b,c,d,top,bottom) {{LED_TEXT(a,b,c,d)},{&top,&bottom}}   
+AuxDisplay auxDisplay[] = {
+  AUX(b,A,t, , voltS,  voltS),  
+  AUX( , , , , tachS,  fuellS),
+  AUX(O,P, , , oilpS,  oilpS),  
+  AUX(O,t, , , oiltS,  oiltS),  
+  AUX(F,P, , , fuelpS,  fuelpS),  
+  AUX(A,L,t, , voltS,  voltS),  
 };
+
+#define AUX_STARTUP_PAGES 1
 

@@ -68,7 +68,9 @@ SIGNAL(TIMER0_COMPA_vect)
     digitalWrite(PINCS, HIGH);
     // ... wait 100 mS for conversion to complete
 
-    if (digitalRead(0)) {
+    // poll the auxillary switch
+    if (digitalRead(AUX_SWITCH)) {
+      // switch up
       if (++switchUp >  2) {
         switchUp = 2;
         if (switchDown)
@@ -77,6 +79,7 @@ SIGNAL(TIMER0_COMPA_vect)
       }  
     }
     else {
+      // switch is down
       ++switchDown;
     }
   }

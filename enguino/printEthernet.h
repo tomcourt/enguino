@@ -1,4 +1,20 @@
-// Performance 'print' functions to ethernet 'client' (includes flush)
+// Update the first 3 numbers of this IP address to your local network
+// for testing but restore it to (192, 168, 0, 111) when finished.
+IPAddress ip(192, 168, 0, 111);
+
+// A made up MAC address. Only real critera is the first bytes 2 lsb must be 1 (for local) and 0 (for unicast).
+byte mac[] = {  0xDE, 0x15, 0x24, 0x33, 0x42, 0x51 };
+
+// Initialize the Ethernet server library
+// with the IP address and port you want to use
+// (port 80 is default for HTTP)
+
+EthernetServer server(80);
+EthernetClient client;
+
+
+
+// Performance 'print' functions to ethernet 'client' using buffer (includes flush function)
 
 char buffer[64];
 int bfree = 64;

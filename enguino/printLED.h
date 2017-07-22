@@ -53,38 +53,53 @@
 
 #define LED_A 0x77
 #define LED_a 0x77
+#define LED_B 0x7c
 #define LED_b 0x7c
 #define LED_C 0x39
+#define LED_c 0x58
 #define LED_D 0x5e
 #define LED_d 0x5e
 #define LED_E 0x79
 #define LED_F 0x71
 #define LED_f 0x71
+#define LED_G 0x3b
+#define LED_g 0x6f
 #define LED_H 0x76
 #define LED_h 0x74
 #define LED_i 0x4
+#define LED_J 0x1e
+#define LED_j 0x1e
 #define LED_L 0x38
 #define LED_n 0x54
 #define LED_O 0x3F
 #define LED_o 0x5c
 #define LED_P 0x73
 #define LED_r 0x50
-#define LED_S 0x6D
-#define LED_s 0x6D
+#define LED_S 0x6d
+#define LED_s 0x6d
 #define LED_T 0x78
 #define LED_t 0x78
 #define LED_U 0x3e
+#define LED_u 0x1c
+#define LED_V 0x3e
+#define LED_v 0x1c
+#define LED_Y 0x6e
+#define LED_y 0x6e
+#define LED_Z 0x6e
+#define LED_z 0x5b
 
 static const byte addressDigit[] = { 1, 3, 7, 9 };    // skip the colon 
 static const byte characterMap[] = { LED_0, LED_1, LED_2, LED_3, LED_4, LED_5, LED_6, LED_7, LED_8, LED_9 };
 
-static byte ledBuffer[11];   // first byte is 0 for the address, 2 is first digit, 4 the second, etc.
+static byte ledBuffer[17];   // first byte is 0 for the address, 2 is first digit, 4 the second, etc.
 
-byte colon;   // used for showing alarm status by wiring a red/green LED onto the colon column
-#define LED_COLON 2
+byte alarmStatus;
 #define STATUS_ALARM   0x4
-#define STATUS_CAUTION 0xC
-#define STATUS_NORMAL  0x8
+#define STATUS_CAUTION 0x5
+#define STATUS_NORMAL  0x1
+
+byte colon;  
+#define LED_COLON 2
 
 void writeI2C(byte line, byte *buffer, byte len) {
   if (!i2c_start((I2C_ADDRESS | (line<<1)) | I2C_WRITE)) 
@@ -103,7 +118,7 @@ void commandLED(byte line, byte command) {
 }
 
 void writeLED(byte line) {
-  writeI2C(line, ledBuffer, 11);  
+  writeI2C(line, ledBuffer, sizeof(ledBuffer));  
 }
 
 void printLEDRawDigits(byte offset, word val) {
@@ -136,6 +151,15 @@ void printLEDRawHalfDigits(byte offset, word number) {
   }  
 }
 
+void printStatus(byte line) {
+  memset(ledBuffer, 0, sizeof(ledBuffer));
+  if (line == 0) {
+    // 4/9 duty cycle for caution/alarm indicator  (22 ma max current, 13 ma typical)
+    ledBuffer[6] = ledBuffer[14] = ((alarmStatus == STATUS_CAUTION) ? STATUS_NORMAL : alarmStatus);  // yellow = 2/4 green +
+    ledBuffer[2] = ledBuffer[10] = alarmStatus;                                                      //          2/4 green + 2/4 red 
+  }
+}
+
 // -------------------------------------------------------
 
 void printLEDSetup() {
@@ -150,6 +174,7 @@ void printLEDSetup() {
 
 // print a text message to the LED on line 0 or 1
 void printLED(byte line, byte a, byte b, byte c, byte d) {
+  printStatus(line);
   ledBuffer[1] =  a;  
   ledBuffer[3] =  b;  
   ledBuffer[5] =  colon; // turn colon off
@@ -160,21 +185,17 @@ void printLED(byte line, byte a, byte b, byte c, byte d) {
 
 // print a text message to the LED on line 0 or 1
 void printLED(byte line, byte *txt) {
-  ledBuffer[1] =  txt[0];  
-  ledBuffer[3] =  txt[1];  
-  ledBuffer[5] =  colon; // turn colon off
-  ledBuffer[7] =  txt[2];  
-  ledBuffer[9] = txt[3];  
-  writeLED(line);
+  printLED(line, txt[0], txt[1], txt[2], txt[3]);
 }
 
 // print the fuel gauge (e.g. 2.5:17)  (left tank : right tank)
 void printLEDFuel(int left, int right) {
-   memset(ledBuffer, 0, sizeof(ledBuffer));
-   printLEDRawHalfDigits(2, left);
-   printLEDRawHalfDigits(4, right);
-   ledBuffer[5] = LED_COLON;    
-   writeLED(1);  
+  memset(ledBuffer, 0, sizeof(ledBuffer));  
+  ledBuffer[1] = ledBuffer[7] = 0;
+  printLEDRawHalfDigits(2, left);
+  printLEDRawHalfDigits(4, right);
+  ledBuffer[5] = LED_COLON;    
+  writeLED(1);  
 }
 
 // print the 'number' to 'line' 0 or 1, place a decimal point 'decimal' digits to the left
@@ -187,7 +208,7 @@ void printLED(byte line, int number, byte decimal) {
       number = 0;
     if (number > 9999)
       number = 9999;
-    memset(ledBuffer, 0, 11);
+    printStatus(line);
     printLEDRawDigits(4, number);
     if (decimal != 0)
       ledBuffer[addressDigit[3-decimal]] |= LED_DP;
