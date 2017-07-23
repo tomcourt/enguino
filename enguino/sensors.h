@@ -1,3 +1,6 @@
+#define RVoff           -495                    // 495 ADC units is when ADC when gauge reads 0, using a 240-33 ohm sensor and a 240 ohm divider
+#define RVscale         (1000.0/(124+RVoff))    // 124 ADC units is when ADC when gauge reads max, using same
+
 extern volatile int tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal reference temp, disable IRQ's to access these
 
 int adcSample[12][4];
@@ -34,19 +37,16 @@ const InterpolateTable r240to33 = {
 };
 
 #if SIMULATE_SENSORS
-#define R2ADC(r) (int)((1024.0 * (r) / ((r)+240.0)) + 0.5)
-
 byte simState = 1;
 
 int simulate1[24] = {  
-  1024*14/20,          // 14 v
+  1000L*14/20,          // 14 v
   // 1024*12/20,          // 12 v
-  R2ADC(72),    // OP - 60 psi
+  1000L*60/100,    // OP - 60 psi
   200*10,       // 200 deg-F
-  R2ADC(123),   // FP - 4 psi           
-  // R2ADC(220),   // FP - .4 psi
-  R2ADC(86),    // 10 gal
-  R2ADC(200),   // 2 gal
+  1000L*4/15,   // FP - 4 psi           
+  1000L*10/16,    // 10 gal
+  1000L*2/16,   // 2 gal
   0, 0,
   0, 0, 0, 0, 0, 0, 0, 2600,
   310*4,320*4,330*4,340*4,      // CHT
@@ -54,12 +54,12 @@ int simulate1[24] = {
 };
 
 int simulate2[24] = {  
-  1024*12/20,          // 12 v
-  R2ADC(72),    // OP - 60 psi
+  1000L*12/20,          // 12 v
+  1000L*60/100,    // OP - 60 psi
   200*10,       // 200 deg-F
-  R2ADC(123),   // FP - 4 psi
-  R2ADC(86),    // 10 gal
-  R2ADC(138),   // 5 gal
+  1000L*4/15,   // FP - 4 psi
+  1000L*10/16,    // 10 gal
+  1000L*5/16,   // 5 gal
   0, 0,
   0, 0, 0, 0, 0, 0, 0, 2300,
   310*4,320*4,330*4,340*4,      // CHT
@@ -67,12 +67,12 @@ int simulate2[24] = {
 };
 
 int simulate3[24] = {  
-  1024*14/20,          // 14 v
-  R2ADC(72),    // OP - 60 psi
+  1000*14/20,          // 14 v
+  1000*60/100,    // OP - 60 psi
   200*10,       // 200 deg-F
-  R2ADC(123),   // FP - 4 psi
-  R2ADC(86),    // 10 gal
-  R2ADC(138),   // 5 gal
+  1000*4/15,   // FP - 4 psi
+  1000*10/16,    // 10 gal
+  1000*5/16,   // 5 gal
   0, 0,
   0, 0, 0, 0, 0, 0, 0, 2300,
   310*4,320*4,330*4,340*4,      // CHT
@@ -96,30 +96,25 @@ int average4(int *samples) {
   return avg>>2;
 }
 
+
 int readSensor(const Sensor *s, byte n = 0) {
   int p = s->pin + n;
   
   #if SIMULATE_SENSORS
     if (p < 0)
       return FAULT;
+    p &= (DUAL_BIT-1);
     switch(simState) {
       case 1: return simulate1[p];  
       case 2: return simulate2[p];  
       case 3: return simulate3[p];  
-    }
-//    if (p < 16)
-//      return rand() & 0x3ff;        
-//    if (p < 20)                       
-//      return rand() & 0x7ff;          // CHT
-//    if (p < 24)
-//      return rand() & 0x7ff + 4000;   // EGT 
-//    return FAULT;
-    
+    }    
   #else
     int v;
     if (p < 0)
       return FAULT;
-     
+    p &= (DUAL_BIT-1);
+    
     int t = s->type;
     int toF = 0;
     if (p == 15) {
@@ -136,11 +131,15 @@ int readSensor(const Sensor *s, byte n = 0) {
       v = average4(adcSample[p]);
       if (t == st_r240to33)
         v = interpolate(&r240to33, v);
+      else if (t == st_v240to33)
+        v = multiplyAndScale(SCALE(RVscale),v+RVoff, divisor);
       else if (t == st_thermistorC || t == st_thermistorF) {
         v = interpolate(&thermistor, v);
         if (t == st_thermistorF)
           toF = 32 * 10;
       }
+      else if (t == st_volts)
+        v = multiplyAndScale(v,1000,10);
     }
     else if (p < 24) {     
       noInterrupts();
@@ -156,4 +155,28 @@ int readSensor(const Sensor *s, byte n = 0) {
     return v;     
   #endif
 }
+
+int scaleValue(const Sensor *s, int val) {
+  if (val == FAULT)
+    return val;
+  return multiplyAndScale(s->vfactor,val+s->voffset, divisor);
+}
+
+byte alertState(Sensor *s, byte offset) {
+ byte b = 0;
+  if (s) {
+    int v = scaleValue(s, readSensor(s,offset));
+    if (v < s->lowWarning)
+      b |= WARNING_LOW;
+    else if (v < s->lowCaution)
+      b |= CAUTION_LOW;
+    if (v > s->highWarning)
+      b |= WARNING_HIGH;
+    else if (v > s->highCaution)
+      b |= CAUTION_HIGH;
+  }
+  return b;
+}
+
+
 

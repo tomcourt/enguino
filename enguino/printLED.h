@@ -5,7 +5,7 @@
 #define SDA_PORT PORTB
 #define I2C_SLOWMODE 1
 #define I2C_TIMEOUT 10 
-#include "SoftI2CMaster.h"
+#include "softI2CMaster.h"
 
 #define HT16K33_OSCILATOR_ON 0x21
 
@@ -93,8 +93,8 @@ static const byte characterMap[] = { LED_0, LED_1, LED_2, LED_3, LED_4, LED_5, L
 
 static byte ledBuffer[17];   // first byte is 0 for the address, 2 is first digit, 4 the second, etc.
 
-byte alarmStatus;
-#define STATUS_ALARM   0x4
+byte alertStatus;
+#define STATUS_WARNING   0x4
 #define STATUS_CAUTION 0x5
 #define STATUS_NORMAL  0x1
 
@@ -155,8 +155,8 @@ void printStatus(byte line) {
   memset(ledBuffer, 0, sizeof(ledBuffer));
   if (line == 0) {
     // 4/9 duty cycle for caution/alarm indicator  (22 ma max current, 13 ma typical)
-    ledBuffer[6] = ledBuffer[14] = ((alarmStatus == STATUS_CAUTION) ? STATUS_NORMAL : alarmStatus);  // yellow = 2/4 green +
-    ledBuffer[2] = ledBuffer[10] = alarmStatus;                                                      //          2/4 green + 2/4 red 
+    ledBuffer[6] = ledBuffer[14] = ((alertStatus == STATUS_CAUTION) ? STATUS_NORMAL : alertStatus);  // yellow = 2/4 green +
+    ledBuffer[2] = ledBuffer[10] = alertStatus;                                                      //          2/4 green + 2/4 red 
   }
 }
 

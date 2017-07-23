@@ -24,7 +24,7 @@ volatile bool tachDidPulse;
 volatile int rpm[8];
 volatile byte rpmInx;
 
-// #define SIMULATE_SENSORS 1
+#define SIMULATE_SENSORS 1
 #include "sensors.h"
 
 // printLED functions for the auxiliary display
@@ -57,59 +57,41 @@ void tachIRQ() {
   tachDidPulse = true;
 }
 
-bool isLow(Sensor *s, int v) {
-  return v < s->lowAlarm || v < s->lowAlert;
+void updateAlerts() {
+  for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++) {
+    AuxDisplay *a = auxDisplay + i;
+    for (byte j=0; j<2; j++) {
+      Sensor *s = a->sensor[j];
+      byte b = alertState(s, 0);
+      if (s->pin & DUAL_BIT)
+        b |= alertState(s, 1);
+      a->alertState[j] = b;     
+    }
+  }
 }
 
-bool isHigh(Sensor *s, int v) {
-  return v > s->highAlarm || v > s->highAlert;
-}
-
-bool isCautionOrAlarm(Sensor *s, int v) {
-  return isLow(s, v) || isHigh(s, v);
-}
-
-bool isCaution(Sensor *s, int v) {
-  return v < s->lowAlert || v > s->highAlert; 
-}
-
-bool isAlarm(Sensor *s, int v) {
-  return v < s->lowAlarm || v > s->highAlarm; 
-}
-
-bool isAlarm(Sensor *s) {
-  if (s == &fuellS)
-    return isAlarm(s,scaleValue(s, readSensor(s))) || isAlarm(s,scaleValue(s, readSensor(s,1)));
-  else
-    return isAlarm(s,scaleValue(s, readSensor(s)));
-}
-
-bool isCaution(Sensor *s) {
-  return isCaution(s,scaleValue(s, readSensor(s)));
-}
-
-void cautionAlarmCheck(bool alarm) {
+void checkForAlerts(bool warning) {
   // work backward to higher priority alerts
   for (byte i=N(auxDisplay)-1; i>=AUX_STARTUP_PAGES; i--) {
-    Sensor *s1 = auxDisplay[i].sensor[1];
-    Sensor *s0 = auxDisplay[i].sensor[0];
-    if (alarm) { 
-      bool a = isAlarm(s1);
-      if (s1 != s0) 
-        a = a || isAlarm(s0);
-      if (a) {
-        alarmStatus = STATUS_ALARM;
-        if (auxDisplay[i].alarm != -1) {
-          auxDisplay[i].alarm = 1;
+    AuxDisplay *a = auxDisplay + i;
+    bool isInfoPage = a->sensor[0] != a->sensor[1];
+    if (warning) { 
+      bool b = (a->alertState[1] & WARNING_ANY);
+      if (isInfoPage) 
+        b = b || (a->alertState[0] & WARNING_ANY);
+      if (b) {
+        alertStatus = STATUS_WARNING;
+        if (a->warning != -1) {
+          a->warning = 1;
           auxPage = i;
          }
       }
     }
     else {
-      if (s1 == s0 && isCaution(s1)) {    // no caution check on info pages
-        alarmStatus = STATUS_CAUTION;
-        if (auxDisplay[i].caution != -1) {
-          auxDisplay[i].caution = 1;
+      if (!isInfoPage && (a->alertState[1] & CAUTION_ANY)) {    // no caution check on info pages
+        alertStatus = STATUS_CAUTION;
+        if (a->caution != -1) {
+          a->caution = 1;
           auxPage = i;
         }
       }
@@ -120,10 +102,9 @@ void cautionAlarmCheck(bool alarm) {
 void showAuxPage(byte inx) {
   AuxDisplay *a = auxDisplay+inx;  
   for (byte n=0; n<2; n++) {
-    Sensor *s = a->sensor[n]; 
-
-    if (isAlarm(s)) {
-      alarmStatus = STATUS_ALARM;
+ 
+    if (a->alertState[n] & WARNING_ANY) {
+      alertStatus = STATUS_WARNING;
       if (blinkAux[n] == 0) 
          blinkAux[n] = 1;
     }
@@ -131,17 +112,16 @@ void showAuxPage(byte inx) {
       blinkAux[n] = 0; 
     commandLED(n, (blinkAux[n] == 1) ? HT16K33_BLINK_1HZ : HT16K33_BLINK_OFF);  
      
+    Sensor *s = a->sensor[n]; 
     int v = scaleValue(s, readSensor(s)); 
     if (n==0 && a->literal[0]) {
       byte t[4];
       memcpy(t,a->literal,4);
-      if (s) {
-        if (isCautionOrAlarm(s, v))
-          t[3] = isLow(s,v) ? LED_L : LED_H;
-      }
+      if (a->alertState[n])
+        t[3] = (a->alertState[1] & (WARNING_LOW | CAUTION_LOW)) ? LED_L : LED_H;
       printLED(n,t);     
     }
-    else if (s == &fuellS)      
+    else if (s->pin & DUAL_BIT)      
       printLEDFuel(scaleValue(s, readSensor(s,0)), scaleValue(s, readSensor(s,1)));    // Show the dual fuel gauge
     else if (s) 
       printLED(n,v, s->decimal);
@@ -149,8 +129,8 @@ void showAuxPage(byte inx) {
 }
 
 bool ackAlert(byte inx) {
- if (auxDisplay[inx].alarm > 0) { 
-    auxDisplay[inx].alarm = -1;
+ if (auxDisplay[inx].warning > 0) { 
+    auxDisplay[inx].warning = -1;
     auxDisplay[inx].caution = -1;
     return true;
   }
@@ -172,6 +152,17 @@ void setup() {
   Serial.begin(9600);
 //    while (!Serial) 
 //      ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
+//
+//  logValue(ARCX(-.004),"x -");
+//  logValue(ARCY(-.004),"y -");
+//  logValue(ARCX(0),"x 0");
+//  logValue(ARCY(0),"y 0");
+//  logValue(ARCX(.167),"x .166");
+//  logValue(ARCY(.167),"y .166");
+//  logValue(ARCX(.9),"x .9");
+//  logValue(ARCY(.9),"y .9");
+//  logValue(ARCX(1),"x 1");
+//  logValue(ARCY(1),"y 1");
 
   pinMode(AUX_SWITCH, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(TACH_SIGNAL),tachIRQ,RISING);
@@ -226,16 +217,16 @@ void loop() {
   else if (switchDown >= 8 && !didHoldKey) {
     // Hold (acknowedge all, reshow all)
     // ---------------------------------
-    if (blinkAux[0] > 0 || blinkAux[1] > 0 || auxDisplay[auxPage].caution > 0 || auxDisplay[auxPage].alarm > 0) {
+    if (blinkAux[0] > 0 || blinkAux[1] > 0 || auxDisplay[auxPage].caution > 0 || auxDisplay[auxPage].warning > 0) {
       ackBlink();
       for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++) 
         ackAlert(i);
     }
     else {
-      // un-ack all and reshow alarms
+      // un-ack all and reshow alerts
       blinkAux[0] = blinkAux[1] = 0; 
       for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++) 
-        auxDisplay[i].alarm = auxDisplay[i].caution = 0;
+        auxDisplay[i].warning = auxDisplay[i].caution = 0;
     }
     auxPage = AUX_STARTUP_PAGES;
     didHoldKey = true;
@@ -289,12 +280,13 @@ void loop() {
   
 halfSecond:
       if (engineRunning) {
-        alarmStatus = STATUS_NORMAL;
-        cautionAlarmCheck(false); 
-        cautionAlarmCheck(true);  
+        alertStatus = STATUS_NORMAL;
+        updateAlerts();
+        checkForAlerts(false); 
+        checkForAlerts(true);  
       }
       else
-        alarmStatus = STATUS_ALARM;
+        alertStatus = STATUS_WARNING;
       showAuxPage(auxPage);  
     }
   }

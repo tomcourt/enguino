@@ -9,12 +9,6 @@ int scaleMark(const Sensor *s, int val) {
   return mark;
 }
 
-int scaleValue(const Sensor *s, int val) {
-  if (val == FAULT)
-    return val;
-  return multiplyAndScale(s->vfactor,val+s->voffset, divisor);
-}
-
 // vertical gauge is
 //    1200 wide except extra room on right needed for labels (centered at 600)
 //    5950 high
@@ -270,11 +264,13 @@ void printRound(const Gauge *g) {
 
   // gauge sweeps 2400 units (-30.0 to 30.0 degrees)
   print_P(F("<g transform='translate(1500 1800)'>\n"));
-  // border sweeps from -31 to 31 degrees
-  print_P(F("<path d='M-1114 670 A 1300 1300 0 1 1 1114 670' fill='none' stroke='black' stroke-width='450' />\n"));
+  // border sweeps from -31 to 31 degrees, use code below to figure out magic x,y values in path
+  //  logValue(ARCX(-.004),"x -");
+  //  logValue(ARCY(-.004),"y -");
+  print_P(F("<path d='M-1114 669 A 1300 1300 0 1 1 1114 669' fill='none' stroke='black' stroke-width='450' />\n"));
   
   // fill in the color regions of the gauage
-  int x0 = -1126, y0 = 650; // far left of sweep
+  int x0 = ARCX(0), y0 = ARCY(0); // far left of sweep
   for (int i=0; i<g->n_regions; i++) {
     int x1 = g->regionEndPts[i];
     int y1 = g->regionEndPts[i + g->n_regions];
@@ -305,25 +301,18 @@ void printRound(const Gauge *g) {
   int val = readSensor(g->sensor);
   int mark = (scaleMark(g->sensor, val) * 24) / 10;
 
-  int scale = scaleValue(g->sensor, val);
-
-  // hard coded for tachometer
-  const char *color = 0;
-  if (val == FAULT)
-    color = yellow;
-  else if (g->sensor->type == st_tachometer) {
-    if (scale < 500)
-      color = yellow;
-    if (scale > 2700)
-      color = red;  
-  }
-  if (color) {
+  byte alert = alertState(g->sensor, 0);
+  if (val == FAULT || alert) {
     print_P(F("<rect x='-500' y='-80' width='1000' height='500' rx='90' ry='90' fill='"));
-    print(color);
+    if (alert & WARNING_ANY)
+      print(red);
+    else
+      print(yellow);
     print_n_close();
   }
 
   print_P(F("<text x='0' y='350' class='value'>"));
+  int scale = scaleValue(g->sensor, val);
   print(scale, g->sensor->decimal);
   print_text_close();
   

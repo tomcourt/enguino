@@ -20,9 +20,9 @@ The prototyping area of either of the shields will have a number of resistors an
 
 ## Software
 
-On the tablet, attach to the Stratux network, use the browser to navigate to 192.168.0.111, save the link to the home page. Go to the home screen and press the Enguino icon, the web page will open up in full screen.
+On the tablet, attach to the Stratux wifi network, use the browser to navigate to 192.168.0.111, save the link to the home page. Go to the home screen and press the Enguino icon, the web page will open up in full screen.
 
-The firmware is installed on the Arduino using the Arduino IDE. First install the [Arduino IDE]. Add the Ethernet 2 libary **TBD** add detailed instructions. Then download the [Enguino source code]. Any configuration must be done before installing the firmware. Configuration involves editing the config.h file. After editing the configuration, connect the Arduino to your PC via a USB cable. This will also power up the Arduino and a green light will appear next to the USB connector. Start up the Arduino software on your PC. Go `File`, `Open` and select the file `enigno.ino`. Then go `Sketch` and `Upload`. The other green LED next to the power LED will flash until the file is uploaded. Done Uploading will appear near the bottom of the window.
+The firmware is installed on the Arduino using the Arduino IDE. First install the [Arduino IDE]. Add the Ethernet 2 libary **TBD** add detailed instructions. Then download the [Enguino source code]. Configuration is done before installing the firmware although you can install it many times. For now just install the default configuration. Configuration involves editing the config.h file. After editing the configuration, connect the Arduino to your PC via a USB cable. This will also power up the Arduino and a green light will appear next to the USB connector. Start up the Arduino software on your PC. Go `File`, `Open` and select the file `enigno.ino`. Then go `Sketch` and `Upload`. The other green LED next to the power LED will flash until the file is uploaded. Done Uploading will appear near the bottom of the window.
 
 ## Configuration
 
@@ -146,41 +146,20 @@ The tachometer measures RPM by recording the uS time whenever the pin has a risi
 
 ### Auxiliary Display
 
-The auxiliary display consists of two lines of a 4 digit [7 segment LED displays]. Limited text would be shown on the s. Some letters are displayed in the wrong case, for example 't' instead of 'T'. The letters 'M', 'W' and 'X' can not be displayed in an any form. Others like 'V' end up looking the same as 'U'.
+The auxiliary display consists of two lines of a 4 digit [7 segment LED displays]. Limited text is shown on the display. Some letters are displayed in the wrong case, for example 't' instead of 'T'. The letters 'M', 'W' and 'X' can not be displayed in any form. Others like 'V' end up looking the same as 'U'.
 
-A caution/warning [bicolor LED] is reworked by soldering onto the 'colon' column of the top display. Red - warning(fix it now or land), yellow - alert(look into it before it becomes a problem), green - ok. The center of the LED goes to pin 7 (the colon's column), red (the flat side) to pin 4 (c segment), green to pin 2 (d segment). Display pins are in DIP order, from the display side, pins 1-7 along the bottom are in reading order, 8-14 in reverse order across the top. **TBD** - this is fairly dim, a much brighter solution is to wire onto 2 of the unconnected row pins (8-15) and tie the center pin of the LED to ground. Now the LED can drive on any row. Start by driving rows 0,2,4 and 6.
+A master caution/warning [bicolor LED] annunciator is reworked by soldering onto two unused display row of the top display. Red - warning(fix it now or land), yellow - caution(look into it before it becomes a problem), green - ok.
 
-An acknowledge pushbutton is also part of the display.
+A pushbutton is also part of the display. Tapping the button acknowledges an alert if one is displayed, otherwise it switches to the next page of information. Holding it for at least a second either acknowledges all alerts or redisplays all alerts. Holding it for 3 seconds or more toggles dimming the display for night flight.
 
-In normal operation the tachometer and fuel for left and right tank in gallons would be shown as `2300` / `15:10`. Excessive RPM's would cause the tachometer to blink. On power up the following sequence would be shown:
+In normal operation the tachometer and fuel for left and right tank in gallons is shown as `2300` / `15:10`. Excessive RPM's cause the tachometer to blink. On power up the following sequence would be shown:
 * `Hobb` / `123.4`    only last 4 digits of hobbs shown
 * `bAt` / `12.2`      alternator-battery voltage
 * `   0` / `15:10`
 
-Whenever out of range indicators happen the display would switch to showing the condition and the value, for example `OPLo` / `2.4`. A 'warning' (red) out of range will be indicated by the first line blinking quickly and the warning LED also blinking red. Pressing the 'Acknowledge' button would return the display to showing tachometer and fuel. The warning LED would continue to be red. In the case of a caution condition (yellow range) the LED would turn yellow. When the engine isn't turning some warnings are suppressed and 'alternator voltage' becomes 'battery voltage' which has a lower warning level. Holding the acknowledge button for longer than a second would show previously acknowledged warnings, followed by any outstanding cautions, followed by readings with each press. A long hold again would return the display to tachometer and fuel. A very long press (>4 seconds) toggles a dim mode.
+Whenever out of range indicators happen the display switch to showing the condition and the value, for example `OP L` / `2.4`. A 'warning' (red) out of range will be indicated by the first line blinking quickly and the annunciator LED also blinking red. Pressing the pushbutton returns the display to showing tachometer and fuel. The annunciator LED continues to be red as long as the condition persists. In the case of a caution condition (yellow range) the annunciator LED turns yellow. When the engine isn't turning some alerts are suppressed.
 
-The warning/cautions are prioritized as follows:
-* `FPLo`
-* `OPLo`
-* `Fuel`  low fuel for either tank
-* `OPHi`
-* `AltH`  > 15 volts
-* `OTHi`
-* `ChtH`
-* `OTLo`
-
-Other messages would include:
-* `AltL`
-* `bAt`   normal battery when not charging   
-* `batL`
-* `Alt`   normal charge system voltage
-* `OP`
-* `Ot`
-* `FP`
-* `Cht`
-* `inoP`  open or short circuit, shown on second line
-
-To prevent having to re-acknowledge warnings there would be both temporal and range hysteresis built in.
+Once an alert has been acknowledged the display will no longer switch to it automatically. To reenable this hold the button for at least a second. The master LED annunciator will show if an caution or warning condition persists or reoccurs, but it will not blink. **TBD** Reenable alerts (or maybe just warnings) after x minute?
 
 ### Parts list
 * Arduino Leonardo ETH - Digikey 1050-1007-ND

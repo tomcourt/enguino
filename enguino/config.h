@@ -1,34 +1,12 @@
 // Uncommenting the following line shows a box around each instrumment and around the viewable area of the page. Use to help arrange gauges.
 // #define BOUNDING_BOX
 
-// !!! Add conditional code to support a single fuel tank, find all instances of fuelS
-#define DUAL_FUEL_TANK 1
-
 #define TACH_DIVIDER 4
 
 // Exceed any of these and engine will be considered 'running'. Hobbs time will accumulate and engine alerts will appear. Setting to 0 will ignore that sensor
 #define RUN_VOLT 130
 #define RUN_OILP 10
 #define RUN_TACH 200
-
-const char *green = "green";
-const char *yellow = "yellow";
-const char *red = "red";
-
-#define divisor 13  // 1<<13 = 8192
-
-#define SCALE(factor)   (int)((factor)*(1<<divisor) + 0.5)  // Converts a floating point factor to integer
-#define GRNG(range)     SCALE(1000.0/(range))               // Used for gfactor, given range returns gfactor that will result in 0-1000 
-#define GARNG(range)     SCALE(1024.0/(range))               // Used for gfactor, given range returns gfactor that will result in 0-1000 
-#define GMIN(low)       (int)(-((low) + 0.5))  
-#define ADCtoV          (5.0/1024.0)                        // multiply this by adc input to get DC volts
-#define toV             (40 * ADCtoV)                       // 1:4 voltage divider, V/10 = adc*toV  
-#define fromV           (1/toV)                             // 1:4 voltage divide, (V/10) * fromV = adc  
-// For Van's gauges or other 240-33 ohm gauges that have a linear voltage response instead of linear resistance use st_volts with the following: 
-#define RVoff           -495                    // 495 is when ADC when gauge reads 0
-#define RVscale         (1000.0/(124+RVoff))    // 124 is when ADC when gauge reads max
-#define RVSCALE(factor) SCALE((factor)*RVscale)
-#define RVRNG(range)    SCALE(RVscale*(range)/1000.0)
 
 // Sensor defintions and scaling
 // -----------------------------
@@ -41,10 +19,11 @@ const char *red = "red";
 
 //   sensor-type    range   
 // --------------  --------
-// st_r240to33     0 - 1000   proportional resistive sensor
+// st_r240to33     0 - 1000   proportional on resistance of sensor forming resistor divider
+// st_v240to33     0 - 1000   proportional on voltage of sensor forming resistor divider
 // st_thermistorC  0 - 1500   degrees C. in tenths
 // st_thermistorF 32 - 2732   degrees F. in tenths
-// st_volts        0 - 1023   ADC units 4.88 mV/per
+// st_volts        0 - 1000   5 mV/per count
 // st_k_type_tcC   0 - 4000   0-1000 degrees C. in quarters
 // st_j_type_tcC   0 - 4000   0-1000 degrees C. in quarters
 // st_k_type_tcF   0 - 4000   32-1832 degrees F. in quarters
@@ -52,14 +31,14 @@ const char *red = "red";
 // st_tachometer
 // st_fuel_flow
 
-//                      sensor-type,  pin, decimal, voffset,         vfactor,            goffset,           gfactor, lowAlarm, lowAlert, highAlert, highAlarm
-const Sensor voltS =  { st_volts,       0,       1,       0, SCALE(200/1024.0),  GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
-const Sensor oilpS =  { st_volts,       1,       0,   RVoff,      RVRNG(100),              RVoff,       RVSCALE(1.),       25,       55,      9999,        95 }; 
-const Sensor oiltS =  { st_thermistorF, 2,       0,       0,       SCALE(.1),        GMIN(50*10),      GRNG(200*10),       -1,      140,      9999,       250 };
-const Sensor fuelpS = { st_volts,       3,       1,   RVoff,      RVRNG(150),              RVoff,      RVSCALE(1.5),        5,       20,        60,        80 };
-const Sensor fuellS = { st_volts,       4,       1,   RVoff,      RVRNG(160),              RVoff,       RVSCALE(1.),       25,       50,      9999,       999 };
-const Sensor tachS =  { st_tachometer, 15,       0,       0,       SCALE(1.),                  0,        GRNG(3000),       -1,      500,      9999,      2700 };
-const Sensor mapS =   { st_volts,      -1,       1,      31,SCALE(328.11/1024),   GMIN(.21*1024),  GARNG(25/32.811),       -1,       -1,      9999,      9999 }; 
+//                      sensor-type,  pin, decimal, voffset,         vfactor,            goffset,          gfactor,lowWarning,lowCaution,highCaution,highWarning
+const Sensor voltS =  { st_volts,       0,       1,       0,     SCALE(.200),    GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
+const Sensor oilpS =  { st_v240to33,    1,       0,       0,     SCALE(.100),                  0,        SCALE(1.),       25,       55,      9999,        95 }; 
+const Sensor oiltS =  { st_thermistorF, 2,       0,       0,     SCALE(.100),        GMIN(50*10),      GRNG(200*10),       -1,      140,      9999,       250 };
+const Sensor fuelpS = { st_v240to33,    3,       1,       0,     SCALE(.150),                  0,  SCALE(150./100.),        5,       20,        60,        80 };
+const Sensor fuellS = { st_v240to33,   DUAL(4),  1,       0,     SCALE(.160),                  0,         SCALE(1.),       25,       50,      9999,       999 };    
+const Sensor tachS =  { st_tachometer, 15,       0,       0,       SCALE(1.),            GMIN(0),        GRNG(3000),       -1,      500,      9999,      2700 };
+const Sensor mapS =   { st_volts,      -1,       1,      31,   SCALE(.32811),          GMIN(210),   GRNG(25/32.811),       -1,       -1,      9999,      9999 }; 
 const Sensor chtS =   { st_k_type_tcF, 16,       0,       0,      SCALE(.25),        GMIN(100*4),       GRNG(400*4),       -1,      150,       400,       500 };  
 const Sensor egtS =   { st_k_type_tcF, 20,       0,       0,      SCALE(.25),       GMIN(1000*4),       GRNG(600*4),       -1,       -1,      9999,      9999 };
 
@@ -93,13 +72,13 @@ int    fpRP[] = { 200,    800,    2400,   3200,   4000  };
 string flRC[] = { red,    yellow, green         };
 int    flRP[] = { 625,    1250,   4000          };
 string taRC[] = { yellow,    green,   red       };
-int    taRP[] = { -1280,  1292,   1126,         // x
-                  -238,   124,    650,          // y
-                   0,    0,      0       };     // > 180 degrees
+int    taRP[] = { ARCX(5./30.)-1,  ARCX(27./30.),    ARCX(1),     // x  (-1 tweak on the arc to get green arc to overlay black arc well, small truncation here causes big arc error)
+                  ARCY(5./30.),    ARCY(27./30.),    ARCY(1),     // y 
+                  0,               0,                0       };   // > 180 degrees
 string maRC[] = { green                 };
-int    maRP[] = { 1126,                     // x
-                  650,                      // y
-                    1                 };    // > 180 degrees
+int    maRP[] = { ARCX(1),                  // x
+                  ARCY(1),                  // y
+                    1                 };     // > 180 degrees
 string chRC[] = { yellow, green, yellow,  red     };
 int    chRP[] = { 1000,   6000,   7940,   8000    };
 
@@ -121,8 +100,8 @@ const Gauge gauges[] = {
 };
 
 // Guage layout for aux display
-// Layout is literal, top-sensor, bottom-sensor. Sensor value is displayed in the top line if literal is blank, otherwise sensor is used for alarm state of top line
-#define AUX(a,b,c,d,top,bottom) {{LED_TEXT(a,b,c,d)},{&top,&bottom}}   
+// ----------------------------
+// Layout is text, top-sensor, bottom-sensor. Sensor value is displayed in the top line if text is blank, otherwise top sensor is used to show warning/caution and low/high on top line
 AuxDisplay auxDisplay[] = {
   AUX(b,A,t, , voltS,  voltS),  
   AUX( , , , , tachS,  fuellS),

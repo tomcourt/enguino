@@ -13,12 +13,7 @@ typedef struct {
   const int  *result;
 } InterpolateTable;
 
-enum SensorType {st_r240to33, st_thermistorF, st_thermistorC, st_volts, st_k_type_tcF, st_j_type_tcF, st_k_type_tcC, st_j_type_tcC, st_tachometer, st_fuel_flow};
-
-// for K style in deg. C, use a multiply of   4096  (0.25),                       offset 0
-// for K style in deg. F, use a multiplier of 7373  (0.25 * 1.8),                 offset -32
-// for J style in deg. C, use a multiplier of 5751  (0.25 * 57.953/41.276),       offset 0
-// for J style in deg. F, use a multiplier of 10352 (0.25 * 1.8 * 57.953/41.276), offset -32
+enum SensorType {st_r240to33, st_v240to33, st_thermistorF, st_thermistorC, st_volts, st_k_type_tcF, st_j_type_tcF, st_k_type_tcC, st_j_type_tcC, st_tachometer, st_fuel_flow};
 
 typedef struct {
   SensorType type;    
@@ -28,10 +23,10 @@ typedef struct {
   int vfactor;    // int_reading = multiply * sensor >> divisor + offset
   int goffset;    // used to calculate gauge marker position
   int gfactor;    // 0-4000 vertical gauge, 0-8000 horizontal gauge, 0-2400 round gauge
-  int lowAlarm;
-  int lowAlert;
-  int highAlert;
-  int highAlarm;
+  int lowWarning;
+  int lowCaution;
+  int highCaution;
+  int highWarning;
 } Sensor;
 
 enum GaugeStyle { gs_vert, gs_pair, gs_round, gs_horiz, gs_aux, gs_infobox };
@@ -58,11 +53,43 @@ typedef struct {
 
 enum GaugeColor { gc_green, gc_yellow, gc_red };
 
+// alert states
+#define WARNING_LOW    1
+#define WARNING_HIGH   2
+#define WARNING_ANY    3
+#define CAUTION_LOW    4
+#define CAUTION_HIGH   8
+#define CAUTION_ANY    12
+
 typedef struct {
   byte literal[4];
   Sensor *sensor[2];
-  signed char alarm;
-  signed char caution;
+  byte alertState[2];       
+  signed char warning;     // +1)alert, -1)supress, 0)no alert
+  signed char caution;     // +1)alert, -1)supress, 0)no alert
 } AuxDisplay;
+
+
+// definitions to support config.h
+// -------------------------------
+#define DUAL_BIT 64
+#define DUAL(x)   (DUAL_BIT | (x))
+
+#define AUX(a,b,c,d,top,bottom) {{LED_TEXT(a,b,c,d)},{&top,&bottom}}   
+
+const char *green = "green";
+const char *yellow = "yellow";
+const char *red = "red";
+
+#define divisor 13  // 1<<13 = 8192
+
+#define SCALE(factor)   (int)((factor)*(1<<divisor) + 0.5)  // Converts a floating point factor to integer
+#define GRNG(range)     SCALE(1000.0/(range))               // Used for gfactor, given range returns gfactor that will result in 0-1000 
+#define GMIN(low)       (int)(-((low) + 0.5))  
+#define ADCtoV          .005                                // 5 mV
+#define toV             (40 * ADCtoV)                       // 1:4 voltage divider, V/10 = adc*toV  
+#define fromV           (1/toV)                             // 1:4 voltage divide, (V/10) * fromV = adc  
+
+
 
 

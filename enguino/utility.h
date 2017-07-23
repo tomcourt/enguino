@@ -1,7 +1,15 @@
-// compile time sin() and cos() for calculating round gauges position in an x, y plane
+// compile time sin() and cos() for calculating round gauges position in an x, y plane (sin/cos only work from -pi/2 to pi/2)
 // https://github.com/pkhuong/polynomial-approximation-catalogue/tree/master/double
 #define SIN(x)  ( (x) + -0.166656810730001*(x)*(x)*(x) + 0.008312366210465815*(x)*(x)*(x)*(x)*(x) + -1.8492181558254177e-4*(x)*(x)*(x)*(x)*(x)*(x)*(x) )
 #define COS(x)  ( 1.0 + -0.4999356307314411*(x)*(x) + 0.04150706685139252*(x)*(x)*(x)*(x) + -0.0012757519849685426*(x)*(x)*(x)*(x)*(x)*(x)             )
+
+// extend above functions to -pi/2 to pi
+#define SIN2(x) ( ((x)<=PI/2.) ? SIN(x) : -SIN((x)-PI) )
+#define COS2(x) ( ((x)<=PI/2.) ? COS(x) : -COS((x)-PI) )
+
+// for a round gauge, calculate the x,y location for a gauge at fraction x of the full 240 degree arc
+#define ARCX(x) (.5-(1300 * COS2(((x)*4./3.-1./6.) * PI)))
+#define ARCY(x) (.5-(1300 * SIN2(((x)*4./3.-1./6.) * PI)))
 
 
 void logTime(unsigned long start, const char *description) {
@@ -67,7 +75,7 @@ long multiply(int a, int b) {
 }
 
 int multiplyAndScale(int a, int b, byte shift) {
-  return int(multiply(a, b) >> shift);
+  return int((multiply(a, b) + (1<<(shift-1))) >> shift);
 }
 
 // interpolate values using table, returns FAULT instead of extrapolating
