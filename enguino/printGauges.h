@@ -41,7 +41,7 @@ void printVertical(const Gauge *g, bool showLabels=true, byte pinOffset=0) {
   
   // add tick marks and labels
   for (int i=0; i<g->n_labels; i++) {
-    s = g->labelPts[i] + 1000;
+    s = 4000 + 1000 - g->labelPts[i];
     print_P(F("<line class='segment' x1='250' y1='"));
     print(s);
     print_P(F("' x2='950' y2='"));
@@ -247,7 +247,7 @@ void printVerticalPair(const Gauge *g) {
   // add tick marks and labels
   for (int i=0; i<g->n_labels; i++) {
     print_P(F("<text x='1350' y='"));
-    print(g->labelPts[i] + 1100);
+    print(1000 + 4000 - g->labelPts[i]);
     print_P(F("' class='mnumber'>"));
     print(g->labelValues[i]);
     print_text_close();

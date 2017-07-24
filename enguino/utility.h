@@ -7,9 +7,6 @@
 #define SIN2(x) ( ((x)<=PI/2.) ? SIN(x) : -SIN((x)-PI) )
 #define COS2(x) ( ((x)<=PI/2.) ? COS(x) : -COS((x)-PI) )
 
-// for a round gauge, calculate the x,y location for a gauge at fraction x of the full 240 degree arc
-#define ARCX(x) (.5-(1300 * COS2(((x)*4./3.-1./6.) * PI)))
-#define ARCY(x) (.5-(1300 * SIN2(((x)*4./3.-1./6.) * PI)))
 
 
 void logTime(unsigned long start, const char *description) {

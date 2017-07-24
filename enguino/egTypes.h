@@ -75,6 +75,12 @@ typedef struct {
 #define DUAL_BIT 64
 #define DUAL(x)   (DUAL_BIT | (x))
 
+// for a round gauge, calculate the x,y location for a gauge at fraction x of the full 240 degree arc
+#define ARCX(x) (.5-(1300 * COS2(((x)*4./3.-1./6.) * PI)))
+#define ARCY(x) (.5-(1300 * SIN2(((x)*4./3.-1./6.) * PI)))
+#define VSEG(x) (.5+4000*(x))
+#define HSEG(x) (.5+8000*(x))
+
 #define AUX(a,b,c,d,top,bottom) {{LED_TEXT(a,b,c,d)},{&top,&bottom}}   
 
 const char *green = "green";
