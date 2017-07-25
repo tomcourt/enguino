@@ -105,6 +105,14 @@ void print_n_close(int n) {
   print_n_close();
 }
 
+void print_g_translate(int x, int y) {
+  print_P(F("<g transform='translate("));
+  print(x);
+  print(' ');
+  print(y);
+  print_P(F(")'>\n"));
+}
+
 void print_g_close() {
   print_P(F("</g>\n"));
 }

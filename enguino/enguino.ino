@@ -152,17 +152,6 @@ void setup() {
   Serial.begin(9600);
 //    while (!Serial) 
 //      ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
-//
-//  logValue(ARCX(-.004),"x -");
-//  logValue(ARCY(-.004),"y -");
-//  logValue(ARCX(0),"x 0");
-//  logValue(ARCY(0),"y 0");
-//  logValue(ARCX(.167),"x .166");
-//  logValue(ARCY(.167),"y .166");
-//  logValue(ARCX(.9),"x .9");
-//  logValue(ARCY(.9),"y .9");
-//  logValue(ARCX(1),"x 1");
-//  logValue(ARCY(1),"y 1");
 
   pinMode(AUX_SWITCH, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(TACH_SIGNAL),tachIRQ,RISING);

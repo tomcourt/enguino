@@ -1,12 +1,35 @@
 /// Implementation for printPrefix and pringGauge
 
 int scaleMark(const Sensor *s, int val) {
+  if (val == FAULT)
+    return FAULT;
   int mark = multiplyAndScale(s->gfactor, val+s->goffset, divisor);
   if (mark < 0)
     mark = 0;
   if (mark > 1000)
     mark = 1000;
   return mark;
+}
+
+void printGaugeRawValue(int x, int y, Sensor *s, int val, byte pinOffset) {
+  print_g_translate(x, y);
+  byte alert = alertState(s, pinOffset);
+  if (alert) {
+    print_P(F("'<rect width='1000' height='500' rx='90' ry='90' fill='"));
+    if (alert & WARNING_ANY)
+      print(red);
+    else
+      print(yellow);
+    print_n_close();
+  }
+  print_P(F("<text x='500' y='425' class='value'>"));
+  print(val, s->decimal);
+  print_text_close();  
+  print_g_close();
+}
+
+void printGaugeValue(int x, int y, Sensor *s, byte pinOffset=0) {
+  printGaugeRawValue(x, y, s, scaleValue(s, readSensor(s, pinOffset)), pinOffset);
 }
 
 // vertical gauge is
@@ -19,17 +42,10 @@ void printVertical(const Gauge *g, bool showLabels=true, byte pinOffset=0) {
   // starts at 1100, 4000 high
   print_P(F("<rect x='400' y='1000' width='400' height='4000' class='rectgauge'/>\n"));
   
-  int val = readSensor(g->sensor, pinOffset);
-  int mark = scaleMark(g->sensor, val) << 2;
-
-  const char *color = 0;
-   
-  // fill in the color regions of the gauage
+   // fill in the color regions of the gauage
   int s = 0; // start at bottom and work up
   for (int i=0; i<g->n_regions; i++) {
     int e = g->regionEndPts[i];
-    if (mark >= s && mark <= e)
-      color = g->regionColors[i];
     print_P(F("<rect fill='"));
     print(g->regionColors[i]);
     print_P(F("' x='400' y='"));
@@ -65,20 +81,11 @@ void printVertical(const Gauge *g, bool showLabels=true, byte pinOffset=0) {
   
   print_P(F("<text x='600' y='5800' class='unit'>"));
   print_text_close(g->units);
-  
-  if (val == FAULT)
-    color = yellow;
-  if (color != 0 && color != green) {
-    print_P(F("<rect x='100' y='5075' width='1000' height='500' rx='90' ry='90' fill='"));
-    print(color);
-    print_n_close();
-  }
 
-  print_P(F("<text x='600' y='5500' class='value'>"));
-  print(scaleValue(g->sensor, val), g->sensor->decimal);
-  print_text_close();
-
-  if (val != FAULT) {
+  printGaugeValue(100, 5075, g->sensor, pinOffset);
+ 
+  int mark = scaleMark(g->sensor, readSensor(g->sensor, pinOffset)) << 2;
+  if (mark != FAULT) {
     print_P(F("<use xlink:href='#vmark' x='600' y='"));
     print_n_close(4000 + 1000 - mark);
   }
@@ -99,47 +106,26 @@ void printHorizontal(const Gauge *g, int count) {
     print_P(F("<rect x='1100' y='"));
     print(600+offset);
     print_P(F("' width='8000' height='400' class='rectgauge'/>\n"));
-    
-    int val = readSensor(g->sensor, n);
-    int mark = scaleMark(g->sensor, val) << 3;
-    
-    const char *color = 0;
-     
+        
     // fill in the color regions of the gauage
     int s = 0; // start at left and work right
     for (int i=0; i<g->n_regions; i++) {
       int e = g->regionEndPts[i];
-      if (mark >= s && mark <= e)
-        color = g->regionColors[i];
-      
       print_P(F("<rect fill='"));
       print(g->regionColors[i]);
       print_P(F("' x='"));
       print(1100 + s);
       print_P(F("' y='"));
-      print(600+offset);
+      print(600 + offset);
       print_P(F("' height='400' width='"));
-      print_n_close(e-s);
-      
+      print_n_close(e-s);     
       s = e;
-   }
-    
-   if (val == FAULT)
-      color = yellow;
-   if (color != 0 && color != green) {
-      print_P(F("<rect x='0' y='"));
-      print(offset+550);
-      print_P(F("' width='1000' height='500' rx='90' ry='90' fill='"));
-      print(color);
-      print_n_close();
     }
-    print_P(F("<text x='500' y='"));
-    print(offset+800);
-    print_P(F("' class='value' alignment-baseline='central'>"));
-    print(scaleValue(g->sensor, val), g->sensor->decimal);
-    print_text_close();
+    
+    printGaugeValue(0, offset+550, g->sensor, count);
 
-    if (val != FAULT) {
+    int mark = scaleMark(g->sensor, readSensor(g->sensor, n)) << 3;
+    if (mark != FAULT) {
       print_P(F("<use xlink:href='#hmark' y='"));
       print(offset+800);
       print_P(F("' x='"));
@@ -179,28 +165,17 @@ void printAuxHoriz(const Gauge *g, int count) {
   int offset = 0;
   for (int n=0; n<count; n++) {
     int val = readSensor(g->sensor, n);
-    int mark = scaleMark(g->sensor, val) << 3;
-       
-    if (val == FAULT) {
-      print_P(F("<rect x='9200' y='"));
-      print(offset+550);
-      print_P(F("' width='1000' height='500' rx='90' ry='90' fill='yellow'/>"));
-    }
-    else if (leanMode) {
-      logValue(val,"val");
-      logValue(peakEGT[n],"peak");
+    if (leanMode && val != FAULT) {
       if (val > peakEGT[n])
         peakEGT[n] = val;
       if (val+12 < peakEGT[n])  // minimium of 5 deg. F drop before showing negative
         val -= peakEGT[n];
     }
-    print_P(F("<text x='9700' y='"));
-    print(offset + 800);
-    print_P(F("' class='value' alignment-baseline='central'>"));
-    print(scaleValue(g->sensor, val), g->sensor->decimal);
-    print_text_close();
 
-    if (val != FAULT) {
+    printGaugeRawValue(9200,offset+550,g->sensor,val,n);
+    
+    int mark = scaleMark(g->sensor, val) << 3;
+    if (mark != FAULT) {
       print_P(F("<use xlink:href='#xmark' y='"));
       print(offset + 800);
       print_P(F("' x='"));
@@ -241,7 +216,7 @@ void printVerticalPair(const Gauge *g) {
   tg.label2 = "LEFT";
   printVertical(&tg, false, 0);
   tg.label2 = "RGT";
-  print_P(F("<g transform='translate(1500 0)'>"));
+  print_g_translate(1500,0);
   printVertical(&tg, false, 1);
   print_g_close();
   // add tick marks and labels
@@ -263,11 +238,15 @@ void printRound(const Gauge *g) {
 #endif
 
   // gauge sweeps 2400 units (-30.0 to 30.0 degrees)
-  print_P(F("<g transform='translate(1500 1800)'>\n"));
+  print_g_translate(1500,1800);   // center of the dial
   // border sweeps from -31 to 31 degrees, use code below to figure out magic x,y values in path
-  //  logValue(ARCX(-.004),"x -");
-  //  logValue(ARCY(-.004),"y -");
-  print_P(F("<path d='M-1114 669 A 1300 1300 0 1 1 1114 669' fill='none' stroke='black' stroke-width='450' />\n"));
+//    logValue(ARCX(-.004),"x -");
+//    logValue(ARCY(-.004),"y -");
+
+  // all dimensions are multiplied by 10 for arc drawing because even small integer 
+  // truncation errors in sub-arcs cause them to not align well with the black backdrop arc.
+  print_P(F("<g transform='scale(.1)'>\n"));    
+  print_P(F("<path d='M-11147 6688 A 13000 13000 0 1 1 11147 6688' fill='none' stroke='black' stroke-width='4500' />\n"));
   
   // fill in the color regions of the gauage
   int x0 = ARCX(0), y0 = ARCY(0); // far left of sweep
@@ -279,18 +258,19 @@ void printRound(const Gauge *g) {
     print(x0);
     print(' ');
     print(y0);
-    print_P(F("A 1300 1300 0 "));
+    print_P(F("A 13000 13000 0 "));
     print(g->regionEndPts[i + g->n_regions*2]);
     print_P(F(" 1 "));
     print(x1);
     print(' ');
     print(y1);
-    print_P(F("' fill='none' stroke-width='400' stroke='"));
+    print_P(F("' fill='none' stroke-width='4000' stroke='"));
     print(g->regionColors[i]);
     print_n_close();
     
     x0 = x1, y0 = y1;
   }
+  print_g_close();
   
   print_P(F("<text x='0' y='-200' class='label'>"));
   print_text_close(g->label1);
@@ -298,30 +278,15 @@ void printRound(const Gauge *g) {
   print_P(F("<text x='0' y='5900' 700='unit'>"));
   print_text_close(g->units);
   
-  int val = readSensor(g->sensor);
-  int mark = (scaleMark(g->sensor, val) * 24) / 10;
-
-  byte alert = alertState(g->sensor, 0);
-  if (val == FAULT || alert) {
-    print_P(F("<rect x='-500' y='-80' width='1000' height='500' rx='90' ry='90' fill='"));
-    if (alert & WARNING_ANY)
-      print(red);
-    else
-      print(yellow);
-    print_n_close();
-  }
-
-  print_P(F("<text x='0' y='350' class='value'>"));
-  int scale = scaleValue(g->sensor, val);
-  print(scale, g->sensor->decimal);
-  print_text_close();
-  
+  printGaugeValue(-500, -80, g->sensor);
+ 
   print_P(F("<text x='0' y='700' class='unit'>"));
   print_text_close(g->units);
 
-  if (val != FAULT) {
+  int mark = scaleMark(g->sensor, readSensor(g->sensor));
+  if (mark != FAULT) {
     print_P(F("<use xlink:href='#vmark' x='-1300' y='0' transform='rotate("));
-    print(mark-300,1);
+    print((mark*24) / 10 - 300, 1);   // convert 0 to 1000 scale value to -30.0 to 210.0 degrees of angle
     print_P(F(")'/>\n"));
   }
   print_g_close();
@@ -365,11 +330,7 @@ void printInfoBox() {
 
 
 void printGauge(const Gauge *g) {
-  print_P(F("<g transform='translate("));
-  print(g->x);
-  print(' ');
-  print(g->y);
-  print_P(F(")'>\n"));
+  print_g_translate(g->x, g->y);
   switch(g->style) {
     case gs_vert:
       printVertical(g);

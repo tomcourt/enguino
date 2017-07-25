@@ -64,7 +64,7 @@ const int egtLP[] =  { HSEG(150./600.), HSEG(300./600.), HSEG(450./600.) };    /
 string oilpRC[] = { red,            yellow,         green,          red     };
 int    oilpRP[] = { VSEG(25./100.), VSEG(55./100.), VSEG(95./100.), VSEG(1) };
 string oiltRC[] = { yellow,         green,           red     };
-int    oiltRP[] = { VSEG(40./200.), VSEG(198./200.), VSEG(1) };     // offset and range offset by 50 deg-F
+int    oiltRP[] = { VSEG(40./200.), VSEG(196./200.), VSEG(1) };     // offset and range offset by 50 deg-F
 string voltRC[] = { red,         yellow,      green,       yellow,       red     };
 int    voltRP[] = { VSEG(1./6.), VSEG(3./6.), VSEG(5./6.), VSEG(5.9/6.), VSEG(1) };      // offset and range offset by 10 volts
 string fuelpRC[] = { red,          yellow,       green,        yellow,       red     };
@@ -72,13 +72,13 @@ int    fuelpRP[] = { VSEG(.5/10.), VSEG(2./10.), VSEG(6./10.), VSEG(8./10.), VSE
 string fuellRC[] = { red,           yellow,       green   };
 int    fuellRP[] = { VSEG(2.5/16.), VSEG(5./16.), VSEG(1) };
 string tachRC[] = { yellow,              green,                red       };
-int    tachRP[] = { ARCX(500./3000.)-1,  ARCX(2700./3000.),    ARCX(1),       // x  (-1 tweak on the arc to get green arc to overlay black arc well, small truncation here causes big arc error)
-                  ARCY(500./3000.),    ARCY(2700./3000.),    ARCY(1),       // y 
-                  0,                   0,                    0         };   // > 180 degrees
+int    tachRP[] = { ARCX(500./3000.),    ARCX(2700./3000.),    ARCX(1),       // x  
+                    ARCY(500./3000.),    ARCY(2700./3000.),    ARCY(1),       // y 
+                    0,                   0,                    0         };   // arc segmenet is > 180 degrees
 string mapRC[] = { green    };
 int    mapRP[] = { ARCX(1),        // x
-                  ARCY(1),        // y
-                    1      };     // > 180 degrees
+                   ARCY(1),        // y
+                   1      };       // arc segmenet is > 180 degrees
 string chtRC[] = { yellow,         green,           yellow,          red     };
 int    chtRP[] = { HSEG(50./400.), HSEG(300./400.), HSEG(395./400.), HSEG(1) };     // offset and range offset by 100 deg-F
 

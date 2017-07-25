@@ -48,7 +48,7 @@ int simulate1[24] = {
   1000L*10/16,    // 10 gal
   1000L*2/16,   // 2 gal
   0, 0,
-  0, 0, 0, 0, 0, 0, 0, 2600,
+  0, 0, 0, 0, 0, 0, 0, 2800,
   310*4,320*4,330*4,340*4,      // CHT
   1010*4,1020*4,1030*4,1040*4     // EGT
 };
@@ -67,14 +67,14 @@ int simulate2[24] = {
 };
 
 int simulate3[24] = {  
-  1000*14/20,          // 14 v
-  1000*60/100,    // OP - 60 psi
+  1000L*14/20,          // 14 v
+  1000L*60/100,    // OP - 60 psi
   200*10,       // 200 deg-F
-  1000*4/15,   // FP - 4 psi
-  1000*10/16,    // 10 gal
-  1000*5/16,   // 5 gal
+  1000L*4/15,   // FP - 4 psi
+  1000L*10/16,    // 10 gal
+  1000L*5/16,   // 5 gal
   0, 0,
-  0, 0, 0, 0, 0, 0, 0, 2300,
+  0, 0, 0, 0, 0, 0, 0, 0,
   310*4,320*4,330*4,340*4,      // CHT
   1010*4,1020*4,1030*4,1040*4     // EGT
 };
@@ -158,7 +158,7 @@ int readSensor(const Sensor *s, byte n = 0) {
 
 int scaleValue(const Sensor *s, int val) {
   if (val == FAULT)
-    return val;
+    return FAULT;
   return multiplyAndScale(s->vfactor,val+s->voffset, divisor);
 }
 
@@ -166,14 +166,18 @@ byte alertState(Sensor *s, byte offset) {
  byte b = 0;
   if (s) {
     int v = scaleValue(s, readSensor(s,offset));
-    if (v < s->lowWarning)
-      b |= WARNING_LOW;
-    else if (v < s->lowCaution)
-      b |= CAUTION_LOW;
-    if (v > s->highWarning)
-      b |= WARNING_HIGH;
-    else if (v > s->highCaution)
-      b |= CAUTION_HIGH;
+    if (v == FAULT) 
+      b = ALERT_FAULT;
+    else {
+      if (v < s->lowWarning)
+        b |= WARNING_LOW;
+      else if (v < s->lowCaution)
+        b |= CAUTION_LOW;
+      if (v > s->highWarning)
+        b |= WARNING_HIGH;
+      else if (v > s->highCaution)
+        b |= CAUTION_HIGH;
+    }
   }
   return b;
 }

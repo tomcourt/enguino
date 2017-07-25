@@ -60,6 +60,7 @@ enum GaugeColor { gc_green, gc_yellow, gc_red };
 #define CAUTION_LOW    4
 #define CAUTION_HIGH   8
 #define CAUTION_ANY    12
+#define ALERT_FAULT    16
 
 typedef struct {
   byte literal[4];
@@ -76,8 +77,8 @@ typedef struct {
 #define DUAL(x)   (DUAL_BIT | (x))
 
 // for a round gauge, calculate the x,y location for a gauge at fraction x of the full 240 degree arc
-#define ARCX(x) (.5-(1300 * COS2(((x)*4./3.-1./6.) * PI)))
-#define ARCY(x) (.5-(1300 * SIN2(((x)*4./3.-1./6.) * PI)))
+#define ARCX(x) (.5-(13000 * COS2(((x)*4./3.-1./6.) * PI)))
+#define ARCY(x) (.5-(13000 * SIN2(((x)*4./3.-1./6.) * PI)))
 #define VSEG(x) (.5+4000*(x))
 #define HSEG(x) (.5+8000*(x))
 
