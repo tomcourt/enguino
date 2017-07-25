@@ -3,7 +3,7 @@
 
 #define TACH_DIVIDER 4
 
-// Exceed any of these and engine will be considered 'running'. Hobbs time will accumulate and engine alerts will appear. Setting to 0 will ignore that sensor
+// Exceed any of these and engine will be considered 'running'. Hobbs time will accumulate and engine alerts will appear. A 0 value will cause that sensor to be ignored.
 #define RUN_VOLT 130
 #define RUN_OILP 10
 #define RUN_TACH 200
@@ -38,12 +38,12 @@ const Sensor voltS =  { st_volts,       0,       1,       0,     SCALE(.200),   
 const Sensor fuelpS = { st_v240to33,    3,       1,       0,     SCALE(.150),                  0,  SCALE(150./100.),        5,       20,        60,        80 };
 const Sensor fuellS = { st_v240to33,   DUAL(4),  1,       0,     SCALE(.160),                  0,         SCALE(1.),       25,       50,      9999,       999 };    
 const Sensor tachS =  { st_tachometer, 15,       0,       0,       SCALE(1.),            GMIN(0),        GRNG(3000),       -1,      500,      9999,      2700 };
-const Sensor mapS =   { st_volts,      -1,       1,      31,   SCALE(.32811),          GMIN(210),   GRNG(25/32.811),       -1,       -1,      9999,      9999 }; 
+const Sensor mapS =   { st_volts,       9,       1,     102,   SCALE(.32811),          GMIN(210),GRNG(1000*25/32.811),     -1,       -1,      9999,      9999 }; 
 const Sensor chtS =   { st_k_type_tcF, 16,       0,       0,      SCALE(.25),        GMIN(100*4),       GRNG(400*4),       -1,      150,       400,       500 };  
 const Sensor egtS =   { st_k_type_tcF, 20,       0,       0,      SCALE(.25),       GMIN(1000*4),       GRNG(600*4),       -1,       -1,      9999,      9999 };
 
-// Labels 
-// ------
+// Label and gradations 
+// --------------------
 string    oilpLV[] =  {     "80",            "60",           "40",           "20"  };
 const int oilpLP[] =  { VSEG(80./100.),  VSEG(60./100.), VSEG(40./100.), VSEG(20./100.) };
 string    oiltLV[] =  {     "200",           "150",          "100" };
@@ -111,5 +111,6 @@ AuxDisplay auxDisplay[] = {
   AUX(A,L,t, , voltS,  voltS),  
 };
 
+// number of pages shown on startup
 #define AUX_STARTUP_PAGES 1
 

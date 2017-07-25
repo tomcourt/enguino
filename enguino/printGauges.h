@@ -122,7 +122,7 @@ void printHorizontal(const Gauge *g, int count) {
       s = e;
     }
     
-    printGaugeValue(0, offset+550, g->sensor, count);
+    printGaugeValue(0, offset+550, g->sensor, n);
 
     int mark = scaleMark(g->sensor, readSensor(g->sensor, n)) << 3;
     if (mark != FAULT) {
@@ -164,17 +164,17 @@ void printAuxHoriz(const Gauge *g, int count) {
 #endif
   int offset = 0;
   for (int n=0; n<count; n++) {
-    int val = readSensor(g->sensor, n);
+    int val = scaleValue(g->sensor, readSensor(g->sensor, n));
     if (leanMode && val != FAULT) {
       if (val > peakEGT[n])
         peakEGT[n] = val;
-      if (val+12 < peakEGT[n])  // minimium of 5 deg. F drop before showing negative
+      if (val+5 < peakEGT[n])  // minimium of 5 deg. F drop before showing negative
         val -= peakEGT[n];
     }
 
     printGaugeRawValue(9200,offset+550,g->sensor,val,n);
     
-    int mark = scaleMark(g->sensor, val) << 3;
+    int mark = scaleMark(g->sensor, readSensor(g->sensor, n)) << 3;
     if (mark != FAULT) {
       print_P(F("<use xlink:href='#xmark' y='"));
       print(offset + 800);
@@ -229,7 +229,7 @@ void printVerticalPair(const Gauge *g) {
   }
 }
 
-// round gauge is
+// round gauge sweeps is
 //    3000 wide (centered at 1500)
 //    2650 or so high
 void printRound(const Gauge *g) {
@@ -237,11 +237,10 @@ void printRound(const Gauge *g) {
   print_P(F("<rect x='0' y='0' width='3000' height='2650' fill='none' stroke='orange'/>\n"));
 #endif
 
-  // gauge sweeps 2400 units (-30.0 to 30.0 degrees)
-  print_g_translate(1500,1800);   // center of the dial
+  print_g_translate(1500,1800);   // center of the dial is origin
   // border sweeps from -31 to 31 degrees, use code below to figure out magic x,y values in path
-//    logValue(ARCX(-.004),"x -");
-//    logValue(ARCY(-.004),"y -");
+  //    logValue(ARCX(-.004),"x -");
+  //    logValue(ARCY(-.004),"y -");
 
   // all dimensions are multiplied by 10 for arc drawing because even small integer 
   // truncation errors in sub-arcs cause them to not align well with the black backdrop arc.
