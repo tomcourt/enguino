@@ -14,13 +14,9 @@ volatile int tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal refere
 volatile bool eighthSecondTick;
 volatile byte eighthSecondCount = 0;
 
-volatile byte switchDown;   // use this for detecting a key held down for a period of time
-volatile byte switchUp;
-volatile byte switchPress;   // use this to detect a short keypress, then reset to 0
-
 int readSPI() {
   word v = 0;
-  for (byte i=16; i!=0; i--) {
+  for (byte i=16; i; i--) {
     v <<= 1;
     digitalWrite(PINSC, HIGH);
     // 100nS min. delay implied
@@ -56,6 +52,10 @@ SIGNAL(TIMER0_COMPA_vect)
   static byte ms = 0;
   static byte ch = 0;
 
+#if DEBUG
+  checkFreeRam();
+#endif
+  
   if (ms == 0) {
     // select the thermocouple channel on the mux
     digitalWrite(PINA0, ch&1); 
@@ -68,20 +68,7 @@ SIGNAL(TIMER0_COMPA_vect)
     digitalWrite(PINCS, HIGH);
     // ... wait 100 mS for conversion to complete
 
-    // poll the auxillary switch
-    if (digitalRead(AUX_SWITCH)) {
-      // switch up
-      if (++switchUp >  2) {
-        switchUp = 2;
-        if (switchDown)
-          switchPress = switchDown;
-        switchDown = 0; 
-      }  
-    }
-    else {
-      // switch is down
-      ++switchDown;
-    }
+    pollAuxSwitch();
   }
   else if (ms == 121) {   // spec says 100mS, IRQ's are a bit slower, so this is >100mS
     // stop conversion, start serial interface
@@ -105,6 +92,8 @@ SIGNAL(TIMER0_COMPA_vect)
     ms = 255; // ++ will make this 0 
     eighthSecondCount++;
     eighthSecondTick = true;
+    if ((eighthSecondCount&3) == 0) 
+      updateFuelFlow();
   }
   ms++;
 }

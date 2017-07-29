@@ -3,9 +3,11 @@
 
 #define TACH_DIVIDER 4
 
+#define DEFAULT_K_FACTOR (68000L / 40)  // for fuel flow transducer
+
 // Exceed any of these and engine will be considered 'running'. Hobbs time will accumulate and engine alerts will appear. A 0 value will cause that sensor to be ignored.
 #define RUN_VOLT 130
-#define RUN_OILP 10
+#define RUN_OILP 30
 #define RUN_TACH 200
 
 // Sensor defintions and scaling
@@ -28,19 +30,21 @@
 // st_j_type_tcC   0 - 4000   0-1000 degrees C. in quarters
 // st_k_type_tcF   0 - 4000   32-1832 degrees F. in quarters
 // st_j_type_tcF   0 - 4000   32-1832 degrees F. in quarters
-// st_tachometer
-// st_fuel_flow
+// st_unit                    unit values, RPM, fuel flow, hobbs
 
 //                      sensor-type,  pin, decimal, voffset,         vfactor,            goffset,          gfactor,lowWarning,lowCaution,highCaution,highWarning
 const Sensor oilpS =  { st_v240to33,    1,       0,       0,     SCALE(.100),                  0,        SCALE(1.),        25,       55,      9999,        95 }; 
 const Sensor oiltS =  { st_thermistorF, 2,       0,       0,     SCALE(.100),        GMIN(50*10),      GRNG(200*10),       -1,      140,      9999,       250 };
 const Sensor voltS =  { st_volts,       0,       1,       0,     SCALE(.200),    GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
 const Sensor fuelpS = { st_v240to33,    3,       1,       0,     SCALE(.150),                  0,  SCALE(150./100.),        5,       20,        60,        80 };
-const Sensor fuellS = { st_v240to33,   DUAL(4),  1,       0,     SCALE(.160),                  0,         SCALE(1.),       25,       50,      9999,       999 };    
-const Sensor tachS =  { st_tachometer, 15,       0,       0,       SCALE(1.),            GMIN(0),        GRNG(3000),       -1,      500,      9999,      2700 };
-const Sensor mapS =   { st_volts,       9,       1,     102,   SCALE(.32811),          GMIN(210),GRNG(1000*25/32.811),     -1,       -1,      9999,      9999 }; 
+const Sensor fuellS = { st_v240to33,  DUAL(4),   1,       0,     SCALE(.160),                  0,         SCALE(1.),       25,       50,      9999,       999 };    
+const Sensor tachS =  { st_unit,    TACH_SENSOR, 0,       0,       SCALE(1.),            GMIN(0),        GRNG(3000),       -1,      500,      9999,      2700 };
+const Sensor mapS =   { st_volts,       8,       1,     102,   SCALE(.32811),          GMIN(210),GRNG(1000*25/32.811),     -1,       -1,      9999,      9999 }; 
 const Sensor chtS =   { st_k_type_tcF, 16,       0,       0,      SCALE(.25),        GMIN(100*4),       GRNG(400*4),       -1,      150,       400,       500 };  
 const Sensor egtS =   { st_k_type_tcF, 20,       0,       0,      SCALE(.25),       GMIN(1000*4),       GRNG(600*4),       -1,       -1,      9999,      9999 };
+const Sensor fuelfS = { st_unit,   FUELF_SENSOR, 1,       0,       SCALE(1.),            GMIN(0),        GRNG(150),        -1,       -1,      9999,      9999 };
+const Sensor fuelrS = { st_unit,   FUELR_SENSOR, 1,       0,       SCALE(1.),            GMIN(0),        GRNG(400),        -1,       -1,      9999,      9999 };
+const Sensor hobbsS = { st_unit,   HOBBS_SENSOR, 1,       0,       SCALE(1.),            GMIN(0),       GRNG(1000),        -1,       -1,      9999,      9999 };
 
 // Label and gradations 
 // --------------------
@@ -95,7 +99,7 @@ const Gauge gauges[] = {
   {100,       0,  gs_round,  "TACH", "",     "rpm",    0,       0,       0,          tachRC,  tachRP,  N(tachRC),  &tachS},
   {100,    3200,  gs_round,  "MP",   "",     "in-hg",  0,       0,       0,          mapRC,   mapRP,   N(mapRC),   &mapS},
   {2950,    6150, gs_horiz,  "CHT",  "",     "",       chtLV,   chtLP,   N(chtLV),   chtRC,   chtRP,   N(chtRC),   &chtS},
-  {2950,    6150, gs_aux,    "EGT",  "",     "",       egtLV,   egtLP,   N(egtLV),   0,       0,       0,          &egtS},
+  {2950,    6150, gs_egt,    "EGT",  "",     "",       egtLV,   egtLP,   N(egtLV),   0,       0,       0,          &egtS},
   {800,     6650, gs_infobox,"",     "",     "",       0,       0,       0,          0,       0,       0,          0}
 };
 
@@ -103,14 +107,15 @@ const Gauge gauges[] = {
 // ----------------------------
 // Layout is text, top-sensor, bottom-sensor. Sensor value is displayed in the top line if text is blank, otherwise top sensor is used to show warning/caution and low/high on top line
 AuxDisplay auxDisplay[] = {
-  AUX(b,A,t, , voltS,  voltS),  
-  AUX( , , , , tachS,  fuellS),
-  AUX(O,P, , , oilpS,  oilpS),  
-  AUX(O,t, , , oiltS,  oiltS),  
-  AUX(F,P, , , fuelpS,  fuelpS),  
-  AUX(A,L,t, , voltS,  voltS),  
+  AUX(H,o,b,b, 0,       &hobbsS),  
+  AUX(b,A,t, , &voltS,  &voltS),  
+  AUX( , , , , &tachS,  &fuellS),
+  AUX(O,P, , , &oilpS,  &oilpS),  
+  AUX(O,t, , , &oiltS,  &oiltS),  
+  AUX(F,P, , , &fuelpS, &fuelpS),  
+  AUX(A,L,t, , &voltS,  &voltS),  
 };
 
 // number of pages shown on startup
-#define AUX_STARTUP_PAGES 1
+#define AUX_STARTUP_PAGES 2
 

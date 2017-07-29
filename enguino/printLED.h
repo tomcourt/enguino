@@ -1,8 +1,11 @@
+// Digital pin assignment
+#define AUX_SWITCH   11
+
 // lookup port mapping to pins here: https://www.arduino.cc/en/Reference/PortManipulation
 #define SCL_PIN 0 
 #define SCL_PORT PORTD 
-#define SDA_PIN 7 
-#define SDA_PORT PORTB
+#define SDA_PIN 1 
+#define SDA_PORT PORTD
 #define I2C_SLOWMODE 1
 #define I2C_TIMEOUT 10 
 #include "softI2CMaster.h"
@@ -85,8 +88,12 @@
 #define LED_v 0x1c
 #define LED_Y 0x6e
 #define LED_y 0x6e
-#define LED_Z 0x6e
+#define LED_Z 0x5b
 #define LED_z 0x5b
+
+volatile byte switchDown;   // use this for detecting a key held down for a period of time
+volatile byte switchUp;
+volatile byte switchPress;   // use this to detect a short keypress, then reset to 0
 
 static const byte addressDigit[] = { 1, 3, 7, 9 };    // skip the colon 
 static const byte characterMap[] = { LED_0, LED_1, LED_2, LED_3, LED_4, LED_5, LED_6, LED_7, LED_8, LED_9 };
@@ -163,6 +170,9 @@ void printStatus(byte line) {
 // -------------------------------------------------------
 
 void printLEDSetup() {
+  // Aux switch grounds pin when pressed, pollAuxSwitch watches for changes in this pin
+  pinMode(AUX_SWITCH, INPUT_PULLUP);
+
   i2c_init();
   
   for (byte line=0; line<2; line++) {   
@@ -214,5 +224,22 @@ void printLED(byte line, int number, byte decimal) {
       ledBuffer[addressDigit[3-decimal]] |= LED_DP;
   }
   writeLED(line);
+}
+
+// call this about 8 times a second in an IRQ
+inline void pollAuxSwitch() {
+  if (digitalRead(AUX_SWITCH)) {
+    // switch up
+    if (++switchUp >  2) {
+      switchUp = 2;
+      if (switchDown)
+        switchPress = switchDown;
+      switchDown = 0; 
+    }  
+  }
+  else {
+    // switch is down
+    ++switchDown;
+  }
 }
 

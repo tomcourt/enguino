@@ -157,7 +157,7 @@ void printHorizontal(const Gauge *g, int count) {
 }
 
 
-void printAuxHoriz(const Gauge *g, int count) {
+void printEGTHoriz(const Gauge *g, int count) {
   // starts at ..., 8000 wide
 #ifdef BOUNDING_BOX
   print_P(F("<rect x='1100' y='0' width='9300' height='3850' fill='none' stroke='orange'/>\n"));
@@ -313,11 +313,11 @@ void printInfoBox() {
   print_P(F("</text></g>\n"));
   
   print_P(F("<text x='800' y='1300' class='value'>GPH: "));    
-  print(0, 1);
+  print(readSensor(&fuelfS), 1);
   print_text_close();
     
- print_P(F("<text x='800' y='2100' class='value'>Tot: "));    
-  print(ee_status.fuel >> 2, 1);
+  print_P(F("<text x='800' y='2100' class='value'>Tot: "));    
+  print(readSensor(&fuelrS), 1);
   print_text_close();
  
   print_P(F("<text x='800' y='2800' style='text-anchor:middle; font-size:300px;'>Hobb: "));    
@@ -343,8 +343,8 @@ void printGauge(const Gauge *g) {
     case gs_horiz:
       printHorizontal(g, 4);
       break;
-    case gs_aux:
-      printAuxHoriz(g, 4);
+    case gs_egt:
+      printEGTHoriz(g, 4);
       break;
     case gs_infobox:
       printInfoBox();

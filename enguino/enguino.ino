@@ -3,35 +3,43 @@
 #include <string.h>
 #include <avr/pgmspace.h>   // storing strings in Flash to save RAM
 
+// Temporary chang this your local network's IP range for testing
+IPAddress ip(192, 168, 0, 111);   // http://192.168.0.111 is link to Enguino
+
+// fictitious MAC address. Only real critera is the first byte's 2 lsb must be 1 (for local) and 0 (for unicast).
+byte mac[] = {  0xDE, 0x15, 0x24, 0x33, 0x42, 0x51 };
+
+EthernetServer server(80);    // Port 80 is HTTP
+EthernetClient client;
+
+// #define DEBUG                 // checks RAM usage
+// #define SIMULATE_SENSORS 3    // number of simulated sensor 'states', use serial to advace state
+
 // sketches don't like typdef's so they are in in this header file instead
 #include "egTypes.h"
 
 #include "utility.h"
 
-#include "persist.h"
-
-// Digital pin assignments
-#define AUX_SWITCH 0
-#define TACH_SIGNAL 2
-
+#define HOBBS_COUNT_INTERVAL (3600/40)    // update hobbs 40 times an hour
 bool leanMode;
 int peakEGT[4];
-byte hobbsCount = 3600/40;    // update hobbs 40 times an hour
+bool eeUpdateDirty;
+byte hobbsCount = HOBBS_COUNT_INTERVAL/2;  // in order to prevent cumulative hobbs error assume half a hobbs count of engine run time was lost on last shutdown
 bool engineRunning;
 
-volatile unsigned long lastTachTime;
 volatile bool tachDidPulse;
 volatile int rpm[8];
-volatile byte rpmInx;
-
-#define SIMULATE_SENSORS 1
-#include "sensors.h"
 
 // printLED functions for the auxiliary display
 #include "printLED.h"
 
 // configuration of sensors and layout of the gauges
 #include "config.h"
+
+#include "sensors.h"
+
+// load and save persistant EEPROM data
+#include "persist.h"
 
 // Performance 'print' functions to ethernet 'client' (includes flush)
 #include "printEthernet.h"
@@ -41,21 +49,16 @@ volatile byte rpmInx;
 #include "printGauges.h"
 #include "printWeb.h"
 
-// Measure thermocouple tempertaures in the background
+// Measure thermocouple tempertures in the background
 #include "tcTemp.h"
 
 bool dimAux;
 bool didHoldKey;
 bool didChangeDim;
-byte auxPage = AUX_STARTUP_PAGES; // next page is info page
+byte auxPage = 0; 
 signed char blinkAux[2]; 
 
-void tachIRQ() {
-  unsigned long newTachTime = micros();
-  rpm[rpmInx++ & 7] = (60000000L/TACH_DIVIDER) / (newTachTime - lastTachTime);
-  lastTachTime = newTachTime;
-  tachDidPulse = true;
-}
+
 
 void updateAlerts() {
   for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++) {
@@ -153,18 +156,18 @@ void setup() {
 //    while (!Serial) 
 //      ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
 
-  pinMode(AUX_SWITCH, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(TACH_SIGNAL),tachIRQ,RISING);
+  sensorSetup();
 
   delay(1); // delay to allow LED display chip to startup
-  eeInit();  
+  
+  eeInit();
+  
   tcTempSetup();
   printLEDSetup();
-  printLED(0,LED_TEXT(h,o,b,b));
-  printLED(1,ee_status.hobbs>>2,1);  
-  delay(1000);
-  showAuxPage(0);
-  delay(1000);
+  for (auxPage=0; auxPage<AUX_STARTUP_PAGES; auxPage++) {
+    showAuxPage(auxPage);
+    delay(2000);
+  }
   switchPress = 0;
    
   // start the Ethernet connection and the server:
@@ -204,27 +207,20 @@ void loop() {
     didHoldKey = false;
   }
   else if (switchDown >= 8 && !didHoldKey) {
-    // Hold (acknowedge all, reshow all)
-    // ---------------------------------
-    if (blinkAux[0] > 0 || blinkAux[1] > 0 || auxDisplay[auxPage].caution > 0 || auxDisplay[auxPage].warning > 0) {
-      ackBlink();
-      for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++) 
-        ackAlert(i);
-    }
-    else {
-      // un-ack all and reshow alerts
-      blinkAux[0] = blinkAux[1] = 0; 
-      for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++) 
-        auxDisplay[i].warning = auxDisplay[i].caution = 0;
-    }
+    // Hold (reshow all)
+    // -----------------
+    // un-ack all and reshow alerts
+    blinkAux[0] = blinkAux[1] = 0; 
+    for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++) 
+      auxDisplay[i].warning = auxDisplay[i].caution = 0;
     auxPage = AUX_STARTUP_PAGES;
     didHoldKey = true;
   }
 
 #if SIMULATE_SENSORS
   if (Serial.read() >= 0) {
-    if (++simState > 3)
-      simState = 1;
+    if (++simState >= SIMULATE_SENSORS)
+      simState = 0;
   }
 #endif
 
@@ -233,41 +229,27 @@ void loop() {
   if (eighthSecondTick) {
     eighthSecondTick = false;
     updateADC();
-    
-    if (eighthSecondCount == 4)
-      goto halfSecond;
-    if (eighthSecondCount >= 8) {
-      if (tachDidPulse)
-        tachDidPulse = false;
-      else
-        memset(rpm, 0, sizeof(rpm));
-        
-      engineRunning = true
-#if RUN_VOLT
-        || scaleValue(&voltS, readSensor(&voltS)) > RUN_VOLT
+
+    if (eighthSecondCount == 4 || eighthSecondCount >= 8) {
+      if (eighthSecondCount >= 8) { // every second
+#if DEBUG
+        logValue(minFreeRam,"minFreeRam");
 #endif
-#if RUN_OILP
-       || scaleValue(&oilpS, readSensor(&oilpS)) > RUN_OILP
-#endif
-#if RUN_TACH
-       || scaleValue(&tachS, readSensor(&tachS)) > RUN_TACH
-#endif
-        ;
+
+        updateTach();
+           
+        engineRunning = isEngineRunning();
   
-      if (engineRunning) {
-        if (--hobbsCount == 0) {
-          if (++(ee_status.hobbs) > 39999) {
-            ee_status.hobbs = 0;
-            ee_status.hobbs1k++;
-          }
+        if (engineRunning)
+          updateHobbs();
+
+        if (eeUpdateDirty) {
           eeUpdateStatus();
-          hobbsCount = 90;
-        }
+          eeUpdateDirty = false;
+        }  
+        eighthSecondCount -= 8;
       }
-      
-      eighthSecondCount -= 8;
-  
-halfSecond:
+      // every half second
       if (engineRunning) {
         alertStatus = STATUS_NORMAL;
         updateAlerts();
@@ -276,7 +258,7 @@ halfSecond:
       }
       else
         alertStatus = STATUS_WARNING;
-      showAuxPage(auxPage);  
+      showAuxPage(auxPage); 
     }
   }
 }

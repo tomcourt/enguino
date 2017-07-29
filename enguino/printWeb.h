@@ -1,5 +1,3 @@
-
-
 void printHomePage() {
   print_P(F(
   "<!DOCTYPE html>\n"
@@ -90,9 +88,9 @@ void printSetupPage() {
         "}\n"
       "</style>\n"
       "<form action='/'>\n"
-        "<input type='radio' name='x' value='a' checked/>Add fuel &#8530;<br>\n"
-        "<input type='radio' name='x' value='f'/>Set fuel capacity &#8530;<br>\n"
-        "<input type='radio' name='x' value='h'/>Set hobbs &#8530;<br>\n"
+        "<input type='radio' name='x' value='a' checked/>Add fuel &#8530s;<br>\n"
+        "<input type='radio' name='x' value='f'/>Set fuel capacity &#8530s;<br>\n"
+        "<input type='radio' name='x' value='h'/>Set hobbs &#8530s;<br>\n"
         "<input type='radio' name='x' value='k'/>Set fuel flow k<br>\n"
         "<br>\n"
         "<input type='number' name='n' pattern='[0-9]*'/>\n"
@@ -186,7 +184,7 @@ void pollForHttpRequest() {
         }
         lastToken = token;
         
-        if (state != 0) {
+        if (state) {
           switch (*state) {
             case '\0':
               if (token >= '0' && token <= '9') {
@@ -205,7 +203,7 @@ void pollForHttpRequest() {
           if (token == *state)
             state++;            // advance state
           else if (url)
-            state = 0;          // completed getting the request because other than the templated query
+            state = 0;          // completed getting the request because other than the templated query, ignore all remaing characters
           else
             state = request;    // reset looking for request if we haven't gotten to the '?'
         }

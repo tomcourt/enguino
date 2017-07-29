@@ -96,22 +96,22 @@ The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing).
 
 | Arduino | 32U4  | Use         |IRQ|Analog|Counter| Assign  |
 |---------|-------|-------------|---|------|-------|---------|
-| D0      | PD2   | Serial RX   | * |      |       | Aux-Sw  |
+| D0      | PD2   | Serial RX   | * |      |       | Tach    |
 | D1      | PD3   | Serial TX   | * |      |       | Fuel-F  |
-| D2      | PD1   | SDA         | * |      |       | Tach    |
+| D2      | PD1   | SDA         | * |      |       | Aux-SDA |
 | D3      | PD0   | SCL/PWM     | * |      |       | Aux-SCL |
-| D4      | PD4   | TC Mux A0   |   |   *  |   *   |         |
+| D4      | PD4   | TC Mux A0   |   |  A6  |   *   |         |
 | D5      | PC6   | TC Mux A1   |   |      |       |         |
-| D6      | PD7   | TC Mux A2   |   |   *  |   *   |         |
+| D6      | PD7   | TC Mux A2   |   |  A7  |   *   |         |
 | D7      | PE6   | TC Mux EN   | * |      |       |         |
-| D8      | PB4   | TC CS       |   |   *  |       |         |
-| D9      | PB5   | Analog 9    |   |   *  |       |         |
-| D10     | PB6   | Ether CS    |   |   *  |       |         |
-| D11     | PB7   | PWM         |   |      |       | Aux-SDA |
-| D12     | PD6   | TC MISO     |   |   *  |       |         |
+| D8      | PB4   | Analog 8    |   |  A8  |       | MAP     |
+| D9      | PB5   | TC CS       |   |  A9  |       |         |
+| D10     | PB6   | Ether CS    |   | A10  |       |         |
+| D11     | PB7   | PWM         |   |      |       | Aux-Sw  |
+| D12     | PD6   | TC MISO     |   | A11  |       |         |
 | D13     | PC7   | TC SCLK/LED |   |      |       |         ||
 
-The SD card on the Leonardo can not be used with the thermocouple board attached as they both use pin D4. The thermocouple board also interferes with 4 of the analog inputs. The Leonardo also interferes with one of the analog inputs.
+The SD card on the Leonardo can not be used with the thermocouple board attached as they both use pin D4. The thermocouple board also interferes with 4 of the analog inputs. The Leonardo itself also interferes with one of the analog inputs.
 
 The D6 and D12 pins support counters which would be useful for the tach and fuel flow. But the thermocouple board also conflicts with this. Interrupt pins will be used instead. With the tach, assume 2 pulses per revolution at 2700 RPM the tach will max out at 90/cps so as long as IRQ disable time is <11ms no error should be expected. For the fuel flow with a k-factor of 68,000 and 13GPH it will max out at 250/cps so IRQ disable time must be <4ms.
 
@@ -184,8 +184,8 @@ Once an alert has been acknowledged the display will no longer switch to it auto
 ### Future stuff
 * Record engine data by having the Engiuno pipe text to a port on the Stratux. The startup script on the stratux starts netcat (nc) in the background to record the text to a file. The script would also truncate the file at on powerup to limit its growth.
 * It may be possible to support 2 (or maybe more) thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a CJC sensor(Analog TMP36). Only 8 bits are usable with 40x, the noisy lower bits help with oversampling though. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably quadruple it (16x oversample). ADC0 and ADC1 are the negative side, any other ADC pin may be positive. With a filtering cap (10nF) several thermocouples could share a pin. The internal ATMEGA temperature sensor needs both offset and gain calibration, a 10 deg-C rise is typical as well, 2 point calibration may be much to expect for users. **TBD** - move the voltage divider sensor to ADC5 to allow future use of thermocouples.
-* A custom shield might be helpful particularly if it were populated. Jumpers would select resistors and maybe filter caps. This would eliminate most to all of the soldering involved. A 4 bit shift register on the thermocouple mux would free up 4 more analog pins on the Leanardo.
-* A custom aux display board would also help. A single LED drive chip could be used as one chip can support 8 LED digits, one display on the high 8 rows, the second on the low 8 on rows, even numbered columns. A bright master caution/warning LED would be easy using the empty rows. And a smaller 7 segment LED modules could be used to allow fitting the display in a 2.25" hole. The switch could be a long post pushbutton on the board that would go through a small hole on the display.
+* A custom shield might be helpful for the typical user who isn't proficient with a soldering iron, particularly if it were populated. Jumpers would select resistors and maybe filter caps. A thermocouple board that didn't interfere with the ADC would add 4 more analog inputs (perhaps a latch for the mux or an I2C thermocouple/mux like Linear's LTC2495CUHF#PBF). An ammeter feature will be desired by some, TI's INA170 High Side Current Shunt Monitor is probably a good part to implement this. Support 12 thermocouples for 6 cylinder? Support for 24 volt electrical system?
+* A custom aux display board would also help. A single LED drive chip could be used as one chip can support 8 LED digits. A smaller 7 segment LED modules could be used to allow fitting the display in a 2.25" hole. The switch could be of the long posted tactile pushbutton style mounted to the board that would go through a small hole on the display (similar to a digikey EG4356TR-ND). The switch wire could be eliminated from the harness if 2 or 3 separate switches are attached to the chip (only presses are detected, holds aren't).
 * The Arduino Yun would support airplanes lacking a Stratux. The code would need to use the 'bridge' objects instead of the ethernet objects. Use #ifdef AVR_YUN to flex the code.
 * Themes - a dark theme could be created easily enough by adjusting the styles. A larger text theme for the gauges would involve more defines and stringizing them for the SVG.
 * Warning lights instead of auxiliary display? A board with 4 caution/warning LEDs (red/green common cathode [bicolor LED]). Turning red and green on produces yellow. Alternatively use a module like the [BOB-13884] to provide 3 RGB LED's.

@@ -6,6 +6,29 @@
 
 typedef const char * string;
 
+// for persist.h
+// -------------
+// both of these must be exactly 8 bytes in size
+typedef struct  {
+  word fullFuel;
+  word kFactor;  // counts per 1/40 gallon
+  word filler1;
+  word filler2;
+} EESettings;
+
+typedef struct {
+  byte sequence;
+  byte hobbs1k; // thousands of an hour rollover
+  word hobbs;   // hobbs in 1/40 of an hour 0-999.975 (0-39,999)
+  word fuel;    // fuel remaining in 1/40 of a gallon (10 GPH, changes every 9 seconds)
+  word filler;
+} EEStatus;
+
+EESettings ee_settings;
+EEStatus ee_status;
+
+// for sensor.h
+// ------------
 typedef struct {
   int start;
   byte n;
@@ -13,7 +36,7 @@ typedef struct {
   const int  *result;
 } InterpolateTable;
 
-enum SensorType {st_r240to33, st_v240to33, st_thermistorF, st_thermistorC, st_volts, st_k_type_tcF, st_j_type_tcF, st_k_type_tcC, st_j_type_tcC, st_tachometer, st_fuel_flow};
+enum SensorType {st_r240to33, st_v240to33, st_thermistorF, st_thermistorC, st_volts, st_k_type_tcF, st_j_type_tcF, st_k_type_tcC, st_j_type_tcC, st_unit};
 
 typedef struct {
   SensorType type;    
@@ -29,7 +52,7 @@ typedef struct {
   int highWarning;
 } Sensor;
 
-enum GaugeStyle { gs_vert, gs_pair, gs_round, gs_horiz, gs_aux, gs_infobox };
+enum GaugeStyle { gs_vert, gs_pair, gs_round, gs_horiz, gs_egt, gs_infobox };
 
 typedef struct {
   int x;
@@ -52,6 +75,11 @@ typedef struct {
 } Gauge;
 
 enum GaugeColor { gc_green, gc_yellow, gc_red };
+
+#define TACH_SENSOR   15
+#define FUELF_SENSOR  14
+#define FUELR_SENSOR  13
+#define HOBBS_SENSOR  12
 
 // alert states
 #define WARNING_LOW    1
@@ -82,7 +110,7 @@ typedef struct {
 #define VSEG(x) (.5+4000*(x))
 #define HSEG(x) (.5+8000*(x))
 
-#define AUX(a,b,c,d,top,bottom) {{LED_TEXT(a,b,c,d)},{&top,&bottom}}   
+#define AUX(a,b,c,d,top,bottom) {{LED_TEXT(a,b,c,d)},{top,bottom}}   
 
 const char *green = "green";
 const char *yellow = "yellow";

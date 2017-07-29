@@ -3,7 +3,7 @@
 #define SIN(x)  ( (x) + -0.166656810730001*(x)*(x)*(x) + 0.008312366210465815*(x)*(x)*(x)*(x)*(x) + -1.8492181558254177e-4*(x)*(x)*(x)*(x)*(x)*(x)*(x) )
 #define COS(x)  ( 1.0 + -0.4999356307314411*(x)*(x) + 0.04150706685139252*(x)*(x)*(x)*(x) + -0.0012757519849685426*(x)*(x)*(x)*(x)*(x)*(x)             )
 
-// extend above functions to -pi/2 to pi
+// extend above functions to -pi/2 to 3/2 pi
 #define SIN2(x) ( ((x)<=PI/2.) ? SIN(x) : -SIN((x)-PI) )
 #define COS2(x) ( ((x)<=PI/2.) ? COS(x) : -COS((x)-PI) )
 
@@ -30,7 +30,18 @@ void logValue(int val, int num) {
 
 void logText(const char *text = "") {
   Serial.println(text);
- }
+}
+
+#if DEBUG
+volatile int minFreeRam = 10000;
+
+void checkFreeRam() {
+  extern int __heap_start, *__brkval; 
+  int n = (int) &n - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+  if (n < minFreeRam)
+    minFreeRam = n;
+}
+#endif
 
 // https://github.com/rekka/avrmultiplication
 // signed16 * signed16

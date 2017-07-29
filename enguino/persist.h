@@ -1,32 +1,20 @@
+// Persistant vairable storage
+// ---------------------------
+// Reads and writes 8 byte buffers to EEPROM.
+// Buffers have 2 copies, the second copy is inverted. This provides for error dection.
+// ee_settings is for variables that don't often change. This can be updated up to 10,000 times.
+// ee_status is for variables that change often. It is written across many locations in EEPROM 
+// for wear-leaveling. It can be updated up to 600,000 times. 
+
 #include <EEPROM.h>
 
-// both of these must be exactly 8 bytes in size
-typedef struct  {
-  word fullFuel;
-  word kFactor;  // counts per 1/40 gallon
-  word filler1;
-  word filler2;
-} EESettings;
-
-typedef struct {
-  byte sequence;
-  byte hobbs1k; // thousands of an hour rollover
-  word hobbs;   // hobbs in 1/40 of an hour 0-999.975 (0-39,999)
-  word fuel;    // fuel remaining in 1/40 of a gallon (10 GPH, changes every 9 seconds)
-  word filler;
-} EEStatus;
-
-EESettings ee_settings;
-EEStatus ee_status;
-
-static byte nextSlot;
+static byte nextFreeSlot;
 
 // slot 0 is for settings, slots 1 through 63 is for status, status' storage slot is distributed for 'wear-leveling' 
 // each slot has the data written twice, the second time is inverted
 // if the first half doesn't match the inverted second half than return false (no valid data)
 static bool eeRead(byte slot, void *buffer) {
-  int address = slot << 4;
-      
+  int address = slot << 4;   
   byte *cp = buffer;
   for (byte i=8; i; i--)
     *cp++ = EEPROM.read(address++); 
@@ -41,10 +29,16 @@ static bool eeRead(byte slot, void *buffer) {
 // this takes 53 ms to complete
 static void eeWrite(byte slot, void *buffer) {
   int address = slot << 4;
-  byte *cp = buffer;
+  
+  byte copy[8];
+  noInterrupts();
+  memcpy(copy, buffer, sizeof(copy));
+  interrupts();
+
+  byte *cp = copy;
   for (byte i=8; i; i--)
     EEPROM.write(address++, *cp++); 
-  cp = buffer;
+  cp = copy;
   for (byte i=8; i; i--)
     EEPROM.write(address++, *cp++ ^ 0xFF) ;
 }
@@ -53,9 +47,13 @@ static void eeWrite(byte slot, void *buffer) {
 
 // only call in setup (assumes globals have been zeroed)
 void eeInit() {
+  // EEPROM is preserved on Leanardo, to test fresh uncomment this
+  //  for (int i = 0 ; i < EEPROM.length() ; i++) {
+  //    EEPROM.write(i, 0);
+  //  }
+  
   if (!eeRead(0, &ee_settings)) {
-    // ee_settings.fullFuel = 0; zeroed in initialization 
-    ee_settings.kFactor = 1700;
+    ee_settings.kFactor = DEFAULT_K_FACTOR;
     eeWrite(0, &ee_settings);
   }
 
@@ -69,16 +67,16 @@ void eeInit() {
     if (found && (signed char)(temp.sequence - ee_status.sequence) <= 0)
       continue;
     ee_status = temp;
-    nextSlot = i + 1;
-    if (nextSlot > 63)
-      nextSlot = 1;
+    nextFreeSlot = i + 1;
+    if (nextFreeSlot > 63)
+      nextFreeSlot = 1;
     found = true;
   }
   if (found)
     return;
-  nextSlot = 2;
-  // ee_status.ALL = 0; zeroed in initialization 
+   // ee_status.ALL = 0; zeroed in initialization 
   eeWrite(1, (void *)&ee_status);  
+  nextFreeSlot = 2;
 }
 
 // this takes 53 ms to complete
@@ -90,8 +88,8 @@ void eeUpdateSettings() {
 // 15,000+ hour eeprom lifetime (at 10GPH) with updates whenever hobbs or gallons changes
 void eeUpdateStatus() {
   ee_status.sequence++;
-  eeWrite(nextSlot, &ee_status);
-  if (++nextSlot > 63)
-    nextSlot = 1;
+  eeWrite(nextFreeSlot, &ee_status);
+  if (++nextFreeSlot > 63)
+    nextFreeSlot = 1;
 }
 
