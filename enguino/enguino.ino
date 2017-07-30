@@ -13,25 +13,22 @@ EthernetServer server(80);    // Port 80 is HTTP
 EthernetClient client;
 
 // #define DEBUG                 // checks RAM usage
-// #define SIMULATE_SENSORS 3    // number of simulated sensor 'states', use serial to advace state
+#define SIMULATE_SENSORS 3    // number of simulated sensor 'states', use serial to advace state
 
 // sketches don't like typdef's so they are in in this header file instead
 #include "egTypes.h"
 
 #include "utility.h"
 
-#define HOBBS_COUNT_INTERVAL (3600/40)    // update hobbs 40 times an hour
 bool leanMode;
 int peakEGT[4];
+
 bool eeUpdateDirty;
-byte hobbsCount = HOBBS_COUNT_INTERVAL/2;  // in order to prevent cumulative hobbs error assume half a hobbs count of engine run time was lost on last shutdown
+
 bool engineRunning;
 
-volatile bool tachDidPulse;
-volatile int rpm[8];
-
 // printLED functions for the auxiliary display
-#include "printLED.h"
+#include "printAux.h"
 
 // configuration of sensors and layout of the gauges
 #include "config.h"
@@ -52,11 +49,12 @@ volatile int rpm[8];
 // Measure thermocouple tempertures in the background
 #include "tcTemp.h"
 
+
+byte auxPage = 0; 
+signed char blinkAux[2]; 
 bool dimAux;
 bool didHoldKey;
 bool didChangeDim;
-byte auxPage = 0; 
-signed char blinkAux[2]; 
 
 
 
@@ -102,10 +100,11 @@ void checkForAlerts(bool warning) {
   }
 }
 
-void showAuxPage(byte inx) {
-  AuxDisplay *a = auxDisplay+inx;  
-  for (byte n=0; n<2; n++) {
- 
+
+
+void showAuxPage() {
+  AuxDisplay *a = auxDisplay + auxPage;  
+  for (byte n=0; n<2; n++) { 
     if (a->alertState[n] & WARNING_ANY) {
       alertStatus = STATUS_WARNING;
       if (blinkAux[n] == 0) 
@@ -131,25 +130,71 @@ void showAuxPage(byte inx) {
   }
 }
 
-bool ackAlert(byte inx) {
- if (auxDisplay[inx].warning > 0) { 
-    auxDisplay[inx].warning = -1;
-    auxDisplay[inx].caution = -1;
+
+
+bool ackAlert() {
+ if (auxDisplay[auxPage].warning > 0) { 
+    auxDisplay[auxPage].warning = -1;
+    auxDisplay[auxPage].caution = -1;
     return true;
   }
-  else if (auxDisplay[inx].caution > 0) {
-    auxDisplay[inx].caution = -1;
+  else if (auxDisplay[auxPage].caution > 0) {
+    auxDisplay[auxPage].caution = -1;
     return true;
   }
   return false;
 }
 
-void ackBlink() {
-  if (blinkAux[0] > 0)
+bool ackBlink() {
+  bool ack = false;
+  if (blinkAux[0] > 0) {
     blinkAux[0] = -1;
-  if (blinkAux[1] > 0)
+    ack = true;
+  }
+  if (blinkAux[1] > 0) {
     blinkAux[1] = -1;
+    ack = true;
+  }
+  return ack;
 }
+
+
+
+// Press (acknowedge/next-page)
+inline void buttonPress() {
+  if (ackBlink()) {
+    ackAlert();
+  }
+  else {
+    if (ackAlert())
+      auxPage = AUX_STARTUP_PAGES;
+    else {
+      auxPage++;
+      if (auxPage >= N(auxDisplay))
+        auxPage = AUX_STARTUP_PAGES;
+    }
+  }
+}
+
+// Hold (reshow all alerts)
+inline void buttonHold() {
+  blinkAux[0] = blinkAux[1] = 0; 
+  for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++) 
+    auxDisplay[i].warning = auxDisplay[i].caution = 0;
+  auxPage = AUX_STARTUP_PAGES;
+  didHoldKey = true;
+}
+
+// Long hold (toggle dim and bright)
+inline void buttonLongHold() {
+  dimAux = !dimAux;
+  for (byte line=0; line<2; line++)   
+    commandLED(line, dimAux?HT16K33_BRIGHT_MIN:HT16K33_BRIGHT_MAX); 
+  didChangeDim = true; 
+  didHoldKey = false;
+}
+
+///////////////////////////////////////////////////////////////////
 
 void setup() {
   Serial.begin(9600);
@@ -157,6 +202,9 @@ void setup() {
 //      ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
 
   sensorSetup();
+  // start the Ethernet connection and the server:
+  Ethernet.begin(mac, ip);
+  server.begin();
 
   delay(1); // delay to allow LED display chip to startup
   
@@ -165,58 +213,14 @@ void setup() {
   tcTempSetup();
   printLEDSetup();
   for (auxPage=0; auxPage<AUX_STARTUP_PAGES; auxPage++) {
-    showAuxPage(auxPage);
+    showAuxPage();
     delay(2000);
   }
-  switchPress = 0;
-   
-  // start the Ethernet connection and the server:
-  Ethernet.begin(mac, ip);
-  server.begin();
+  switchPress = 0;   
 }
 
-void loop() {
-  if (switchPress > 0) {
-    if (switchPress < 8) {
-      // Press (acknowedge/next-page)
-      // ----------------------------
-      if (blinkAux[0] > 0 || blinkAux[1] > 0) {
-        ackAlert(auxPage);
-        ackBlink();
-      }
-      else {
-        if (ackAlert(auxPage))
-          auxPage = AUX_STARTUP_PAGES;
-        else {
-          auxPage++;
-          if (auxPage >= N(auxDisplay))
-            auxPage = AUX_STARTUP_PAGES;
-        }
-      }
-    }
-    switchPress = 0;
-    didChangeDim = false;
-    didHoldKey = false;
-  }
-  if (switchDown >= 24 && !didChangeDim) {
-    // Long hold (dim,bright toggle)
-    dimAux = !dimAux;
-    for (byte line=0; line<2; line++)   
-      commandLED(line, dimAux?HT16K33_BRIGHT_MIN:HT16K33_BRIGHT_MAX); 
-    didChangeDim = true; 
-    didHoldKey = false;
-  }
-  else if (switchDown >= 8 && !didHoldKey) {
-    // Hold (reshow all)
-    // -----------------
-    // un-ack all and reshow alerts
-    blinkAux[0] = blinkAux[1] = 0; 
-    for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++) 
-      auxDisplay[i].warning = auxDisplay[i].caution = 0;
-    auxPage = AUX_STARTUP_PAGES;
-    didHoldKey = true;
-  }
 
+void loop() {  
 #if SIMULATE_SENSORS
   if (Serial.read() >= 0) {
     if (++simState >= SIMULATE_SENSORS)
@@ -226,20 +230,50 @@ void loop() {
 
   pollForHttpRequest();
   
-  if (eighthSecondTick) {
+  if (eighthSecondTick) {    
     eighthSecondTick = false;
+    
     updateADC();
 
-    if (eighthSecondCount == 4 || eighthSecondCount >= 8) {
-      if (eighthSecondCount >= 8) { // every second
+    if (switchPress > 0) {
+      if (switchPress < 8) 
+        buttonPress();
+      switchPress = 0;
+      didChangeDim = false;
+      didHoldKey = false;
+    }
+    if (switchDown >= 24 && !didChangeDim) 
+      buttonLongHold();
+    else if (switchDown >= 8 && !didHoldKey) 
+      buttonHold();
+    if (switchUp > SHOW_DEFAULT_AUX_PAGE_TIMEOUT*8) {
+      if (auxDisplay[auxPage].warning <=0 && auxDisplay[auxPage].caution <= 0)
+        auxPage = AUX_STARTUP_PAGES;    
+    }    
+
+    if (eighthSecondCount == 4 || eighthSecondCount >= 8) {      
+      // every half second
+      // -----------------
+      updateTach();           
+      engineRunning = isEngineRunning();
+
+     if (engineRunning) {
+        alertStatus = STATUS_NORMAL;
+        updateAlerts();
+        checkForAlerts(false); 
+        checkForAlerts(true);  
+      }
+      else
+        alertStatus = STATUS_WARNING;
+        
+      showAuxPage(); 
+
+      // every second
+      // ------------
+      if (eighthSecondCount >= 8) { 
 #if DEBUG
         logValue(minFreeRam,"minFreeRam");
 #endif
-
-        updateTach();
-           
-        engineRunning = isEngineRunning();
-  
         if (engineRunning)
           updateHobbs();
 
@@ -249,16 +283,6 @@ void loop() {
         }  
         eighthSecondCount -= 8;
       }
-      // every half second
-      if (engineRunning) {
-        alertStatus = STATUS_NORMAL;
-        updateAlerts();
-        checkForAlerts(false); 
-        checkForAlerts(true);  
-      }
-      else
-        alertStatus = STATUS_WARNING;
-      showAuxPage(auxPage); 
     }
   }
 }

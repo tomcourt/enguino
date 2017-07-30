@@ -5,16 +5,25 @@
 #define RVoff           -495                    // 495 ADC units is when ADC when gauge reads 0, using a 240-33 ohm sensor and a 240 ohm divider
 #define RVscale         (1000.0/(124+RVoff))    // 124 ADC units is when ADC when gauge reads max, using same
 
+#define HOBBS_COUNT_INTERVAL (3600/40)    // update hobbs 40 times an hour
+
 extern volatile int tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal reference temp, disable IRQ's to access these
 
 int adcSample[12][4];
 byte adcIndex;
+
+volatile bool tachDidPulse;
+volatile int rpm[8];
 
 volatile word fflowCount;
 volatile word fflowRunning;
 word fflowRate;     // in k-factor counts for last 2 seconds, ~3.8 counts is .1 GPH
 word ffRunning[4];
 byte ffRunningInx;
+
+byte hobbsCount = HOBBS_COUNT_INTERVAL/2;  // in order to prevent cumulative hobbs error assume half a hobbs count of engine run time was lost on last shutdown
+
+
 
 const InterpolateTable thermistor = {
   64, 32,

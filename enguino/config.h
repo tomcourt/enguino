@@ -116,6 +116,9 @@ AuxDisplay auxDisplay[] = {
   AUX(A,L,t, , &voltS,  &voltS),  
 };
 
-// number of pages shown on startup
+// number of pages shown on startup, immedietly after the startup pages is the default page
 #define AUX_STARTUP_PAGES 2
+
+// seconds before aux goes back to default page (assuming no acknowleged alerts), max. value 30
+#define SHOW_DEFAULT_AUX_PAGE_TIMEOUT 10
 

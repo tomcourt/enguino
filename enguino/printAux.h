@@ -55,41 +55,41 @@
 #define LED_  0x0   // blank
 
 #define LED_A 0x77
-#define LED_a 0x77
-#define LED_B 0x7c
+#define LED_a 0x77    // looks like A
+#define LED_B 0x7c    // looks like b
 #define LED_b 0x7c
 #define LED_C 0x39
 #define LED_c 0x58
-#define LED_D 0x5e
+#define LED_D 0x5e    // looks like d
 #define LED_d 0x5e
 #define LED_E 0x79
 #define LED_F 0x71
-#define LED_f 0x71
+#define LED_f 0x71    // same as F
 #define LED_G 0x3b
 #define LED_g 0x6f
 #define LED_H 0x76
 #define LED_h 0x74
 #define LED_i 0x4
 #define LED_J 0x1e
-#define LED_j 0x1e
+#define LED_j 0x1e    // same as j
 #define LED_L 0x38
 #define LED_n 0x54
-#define LED_O 0x3F
+#define LED_O 0x3F    // same as 0
 #define LED_o 0x5c
 #define LED_P 0x73
 #define LED_r 0x50
-#define LED_S 0x6d
-#define LED_s 0x6d
-#define LED_T 0x78
+#define LED_S 0x6d    // same as 5
+#define LED_s 0x6d    // same as S,5
+#define LED_T 0x78    // looks like t
 #define LED_t 0x78
 #define LED_U 0x3e
 #define LED_u 0x1c
-#define LED_V 0x3e
-#define LED_v 0x1c
+#define LED_V 0x3e    // same as U
+#define LED_v 0x1c    // same as u
 #define LED_Y 0x6e
-#define LED_y 0x6e
-#define LED_Z 0x5b
-#define LED_z 0x5b
+#define LED_y 0x6e    // same as Y
+#define LED_Z 0x5b    // same as 2
+#define LED_z 0x5b    // same as Z, 2
 
 volatile byte switchDown;   // use this for detecting a key held down for a period of time
 volatile byte switchUp;
@@ -109,13 +109,12 @@ byte colon;
 #define LED_COLON 2
 
 void writeI2C(byte line, byte *buffer, byte len) {
-  if (!i2c_start((I2C_ADDRESS | (line<<1)) | I2C_WRITE)) 
-    goto stop;
-  while (len--) {
-    if (!i2c_write(*buffer++)) 
-      goto stop;   
+  if (i2c_start((I2C_ADDRESS | (line<<1)) | I2C_WRITE)) {
+    while (len--) {
+      if (!i2c_write(*buffer++)) 
+        break;   
+    }
   }
-stop:
   i2c_stop();
 }
 
@@ -230,16 +229,18 @@ void printLED(byte line, int number, byte decimal) {
 inline void pollAuxSwitch() {
   if (digitalRead(AUX_SWITCH)) {
     // switch up
-    if (++switchUp >  2) {
-      switchUp = 2;
+    if (switchUp < 255)
+      switchUp++;
+    if (switchUp >  2) {    // debounce test, button must be up for more than 1/4 second before considered a button up state
       if (switchDown)
         switchPress = switchDown;
       switchDown = 0; 
     }  
-  }
+   }
   else {
     // switch is down
     ++switchDown;
+    switchUp = 0;
   }
 }
 
