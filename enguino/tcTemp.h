@@ -90,10 +90,12 @@ SIGNAL(TIMER0_COMPA_vect)
       ch = 0;
     }
     ms = 255; // ++ will make this 0 
+  
     eighthSecondCount++;
-    eighthSecondTick = true;
-    if ((eighthSecondCount&3) == 0) 
+    if ((eighthSecondCount&3) == 0) // every half second
       updateFuelFlow();
+
+    eighthSecondTick = true;
   }
   ms++;
 }

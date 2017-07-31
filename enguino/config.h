@@ -1,7 +1,10 @@
-// Uncommenting the following line shows a box around each instrumment and around the viewable area of the page. Use to help arrange gauges.
-// #define BOUNDING_BOX
+// Configuration file, assumes Carburated Lycoming O-360 or O-320 with Van's Aircraft sensors. Fuel level senders are Van's for the RV-6.
+// Confirm the yellow and red line (cauation and warning) numbers are correct for your engine. Confirm that your sensors are compatible. 
+// And most importanly confirm that your fuel gauges are correctly reflect fuel in the tank from full to empty.
 
 #define TACH_DIVIDER 4
+
+#define CYLINDERS 4     // used for how may horizontal gauges are drawn
 
 #define DEFAULT_K_FACTOR (68000L / 40)  // for fuel flow transducer
 
@@ -109,7 +112,7 @@ const Gauge gauges[] = {
 AuxDisplay auxDisplay[] = {
   AUX(H,o,b,b, 0,       &hobbsS),  
   AUX(b,A,t, , &voltS,  &voltS),  
-  AUX( , , , , &tachS,  &fuellS),
+  AUX( , , , , &tachS,  &fuellS),   // default page
   AUX(O,P, , , &oilpS,  &oilpS),  
   AUX(O,t, , , &oiltS,  &oiltS),  
   AUX(F,P, , , &fuelpS, &fuelpS),  
@@ -119,6 +122,6 @@ AuxDisplay auxDisplay[] = {
 // number of pages shown on startup, immedietly after the startup pages is the default page
 #define AUX_STARTUP_PAGES 2
 
-// seconds before aux goes back to default page (assuming no acknowleged alerts), max. value 30
+// seconds before aux goes back to default page (assuming no un-acknowleged alerts), max. value 30
 #define SHOW_DEFAULT_AUX_PAGE_TIMEOUT 10
 

@@ -26,20 +26,57 @@ The firmware is installed on the Arduino using the Arduino IDE. First install th
 
 ## Configuration
 
-Due to hardware limitations all calculations are done using integers. A decimal point is assumed during the calculation and added when numbers are displayed.
+Configuring the engine display or new sensors can be a bit involved. Eventually a number of 'stock' config files will be developed and users can choose the one for their engine and sensors.
 
-### Sensors
+All configuration is done by editing the config.h file in the Arduino IDE (integrated development environment).
 
-The engine sensors themselves are fairly generic. The default configuration uses Vans Aircraft engine sensors. At this time the only major non-supported sensor type is millivolt sensors such as an amp-meter, although this could be easily added by using 2 analog inputs in 'differential mode' or another chip.
+Due to hardware limitations all calculations are done using integers. A decimal point is assumed during the calculation and added when numbers are displayed. Decimal numbers are sometimes used in the config.h file but are converted to integers before being transferred to the Arduino.
 
-Good calibration data for sensors can be hard to find. One way to determine configurations for sensors is to disconnect a sensor from its gauge and replace it with a *resistance decade box* (assuming the sensor is resistive). The *calibration.xls* spreadsheet can then be used to find the configuration settings.
+### Sensors and scaling
 
-### Layout
-During design and testing of the layout it may be helpful to connect the Enguino to your local network instead of the Stratux. You may need to update the IP address in the Enguino.ino file. If you do do so, remember to change it back after finalizing the layout. To see values on the gauges while testing, uncomment out the line `#define RANDOM_SENSORS 1`
+The engine sensor system is fairly universal. The default configuration uses Vans Aircraft engine sensors. At this time the only non-supported sensor type is a millivolt sensor for an amp-meter.
+
+Sensors fall into several categories: digital, such as fuel flow and tachometer or analog, generally all the rest.
+
+The digital sensors are attached to dedicated inputs on the Enguino. The analog sensors are either thermocouples in which case they are attached to the thermocouple side otherwise they are attached to the generic side.
+
+If you have a new sensor type you will first need to determine if the sensor has a *resistive* or *voltage* output.
+
+Many sensors are linear in some sense. This means if you plot the resistance or voltage of a sensor against its output (typically pressure) it will show a straight line. Note - some sensors have a resistive output that is linear in voltage, Van's pressure sensors are this way.
+
+The exception to this is many temperature sensors. These are based on a *thermistor* and these are anything but linear. The *CurveFit.xls* spreadsheet can be used to calculate a conversion table for this type of sensor.
+
+Good calibration data to characterize a sensor can be hard to find. One way to determine configurations for sensors is to disconnect a sensor from its gauge and replace it with a *resistance decade box* (assuming the sensor is resistive). The *CurveFit.xls* spreadsheet can then be used to find the configuration settings.
+
+With this information in hand you can update the *Sensor* table in config.h. Update the sensor-type and the voffset and vfactor to get correct numberic readings from the sensor. The goffset and gfactor are used to set the range displayed visually on gauges. The caution and warning levels are specific for the engine.
+
+### Labels and graduations
+
+Only vertical and horizontal gauges can have graduations. The label value (suffix LV) containing the label for the graduation is the first line. The label's position (suffix LP) contains the labels position. Use the VSEG and HSEG functions to convert the values to 'gauge' coordinates.   
 
 ### Ranges
 
-Setting the ranges of the gauges (green, yellow, red regions) is laid out in the config file as follows **TBD**.
+This sets the color ranges of the gauges (green, yellow, red regions). The vertical and horizontal gauges are straight forward. The color is the first line (suffix of RC), the limit's position is the second line (suffix of RP). The starting limit of 0 is not included in the table.
+
+The round gauges require 3 lines to describe the limit's position. The first line is the X coordinate for the position so use the ARCX function to convert the value to gauge coordinates. The second line is the Y coordinate so use the ARCY function. The third line is either 0 or 1, use 1 if the length of this color arc is more than 180 degrees. If not sure, just try it both ways and see which way draws correctly.
+
+### Layout
+
+During design and testing of the layout it may be helpful to connect the Enguino to your local network instead of the Stratux. You may need to update the IP address in the Enguino.ino file. If you do do so, remember to change it back after finalizing the layout. To see values on the gauges while testing, uncomment out the line `#define SIMULATE_SENSORS...`
+
+Most gauges are of the vertical (gs_vert) type. Gauges that are paired left and right such as fuel gauges are of the paired vertical type (gs_pair). In this case the left sensor is connected to *pin* and the right sensor to *pin*+1.
+
+The horizontal gauges (gs_horiz) are typically for handling 3 or more CHT gauges. Set CYLINDERS to the number of CHT sensors. The first cylinder is attached to *pin*, the second to *pin*+1, etc. The EGT gauges (gs_egt) overlay the CHT gauges and support a peaking mode.
+
+### Aux display
+
+The aux display can display a number of pages during startup. After that it displays a default page. Following that are a number of information pages.
+
+A page can display text on the first line, 4 characters, however not all letters are supported.
+
+Each line can be associated with a sensor. If the first line has text and is associated with a sensor it will show caution (the letter L or H will replace the last character) or alarm information (the line will blink).
+
+Otherwise the sensors numeric value will be shown. The default page is tachometer on the top and fuel gauges on the bottom. Avoid having more than one unlabelled page as the numbers may be ambiguous.
 
 ## Stratux
 The Stratux is configured to route network traffic between the wired ethernet to the Enguino and the wifi connecting to a tablet. Note - these instructions are for Stratux v0.8r2, newer versions may require modification.
@@ -138,11 +175,11 @@ For the voltage sensor a 4:1 voltage divider consisting of a 1k and 3.01k (1%) r
 
 The tachometer is supplied with 12 volts, its a hall effect sensor that returns about 10 volt pulses, 4 pulses per revolution.
 
-Vans manifold pressure sensor is 0-90mV. Either a better ADC (Adafruit ADS1015), or the differential mode ADC on the Leonardo or a new manifold pressure sensor (Freescale MPX4115AP, ~$15) will be needed.
+Vans manifold pressure sensor is 0-90mV which is too low to accurately measure with the Arduino. It was easiest to use a new manifold pressure sensor for this.
 
-For a sensor that might contain a voltage higher than Vcc using a voltage divider as used on the voltage sensor will cause a significant load which could create issues if still attached to a backup gauge. Alternatively a 15K ohm resistor between the sensor and the pin will safely clip voltages between 20.5 and -15.5 volts. The goal here is to limit the internal clamping diodes to no more than 1ma after the .7 volt diode drop.
+For a sensor that might contain a voltage higher than Vcc (such as Van's tachometer) using a voltage divider will cause a significant load which could create issues if still attached to a backup gauge. A 15K ohm resistor between the sensor and the pin will safely clip voltages between 20.5 and -15.5 volts. The goal here is to limit the internal clamping diodes in the Arduino's CPU to no more than 1ma after the .7 volt diode drop.
 
-The tachometer measures RPM by recording the uS time whenever the pin has a rising edge. RPM = 60,000,000 / (time - last_time). The division may be replaced by an interpolation table. The time is only accurate to 4 uS so it could be pre-divided by 4. Other interrupt functions (thermocouple and time keeping) will cause occasional jitter. Collecting 8 samples, throwing out the highest and lowest and averaging the middle 4 should fix that.
+The tachometer measures RPM by recording the uS time whenever the pin has a rising edge. RPM = 60,000,000 / (time - last_time). Other interrupt functions (thermocouple and time keeping) will cause occasional jitter. Collecting 8 samples, throwing out the highest and lowest and averaging the middle 4 fixes that.
 
 ### Auxiliary Display
 
@@ -185,13 +222,12 @@ Once an alert has been acknowledged the display will no longer switch to it auto
 * Record engine data by having the Engiuno pipe text to a port on the Stratux. The startup script on the stratux starts netcat (nc) in the background to record the text to a file. The script would also truncate the file at on powerup to limit its growth.
 * It may be possible to support 2 (or maybe more) thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a CJC sensor(Analog TMP36). Only 8 bits are usable with 40x, the noisy lower bits help with oversampling though. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably quadruple it (16x oversample). ADC0 and ADC1 are the negative side, any other ADC pin may be positive. With a filtering cap (10nF) several thermocouples could share a pin. The internal ATMEGA temperature sensor needs both offset and gain calibration, a 10 deg-C rise is typical as well, 2 point calibration may be much to expect for users. **TBD** - move the voltage divider sensor to ADC5 to allow future use of thermocouples.
 * A custom shield might be helpful for the typical user who isn't proficient with a soldering iron, particularly if it were populated. Jumpers would select resistors and maybe filter caps. A thermocouple board that didn't interfere with the ADC would add 4 more analog inputs (perhaps a latch for the mux or an I2C thermocouple/mux like Linear's LTC2495CUHF#PBF). An ammeter feature will be desired by some, TI's INA170 High Side Current Shunt Monitor is probably a good part to implement this. Support 12 thermocouples for 6 cylinder? Support for 24 volt electrical system?
-* A custom aux display board would also help. A single LED drive chip could be used as one chip can support 8 LED digits. A smaller 7 segment LED modules could be used to allow fitting the display in a 2.25" hole. The switch could be of the long posted tactile pushbutton style mounted to the board that would go through a small hole on the display (similar to a digikey EG4356TR-ND). The switch wire could be eliminated from the harness if 2 or 3 separate switches are attached to the chip (only presses are detected, holds aren't).
+* A custom aux display board would also help. A single HT16K33 LED drive chip could be used for both displays as one chip can support 8 LED digits. A smaller 7 segment LED modules could be used to allow fitting the display in a 2.25" hole. A long posted tactile pushbutton switch mounted to the board that would go through a small hole on the display (similar to a digikey EG4356TR-ND) could replace the current switch. The switch wire could be eliminated from the harness if 2 or 3 separate switches are attached to the chip. More switches would be required as the chip can only detect presses, not holds.
 * The Arduino Yun would support airplanes lacking a Stratux. The code would need to use the 'bridge' objects instead of the ethernet objects. Use #ifdef AVR_YUN to flex the code.
 * Themes - a dark theme could be created easily enough by adjusting the styles. A larger text theme for the gauges would involve more defines and stringizing them for the SVG.
-* Warning lights instead of auxiliary display? A board with 4 caution/warning LEDs (red/green common cathode [bicolor LED]). Turning red and green on produces yellow. Alternatively use a module like the [BOB-13884] to provide 3 RGB LED's.
 * Create another TCP or UDP port that can be read from the Stratux (perhaps with netcat). This would be a comma separated text stream of engine data to be logged.
 * Use digitalFastWrite for smaller code - https://github.com/NicksonYap/digitalWriteFast
-* Percent power resources:
+* Percent power resources if I try to squeeze that in:
 table - www.kilohotel.com/rv8/rvlinks/o360apwr.xls www.kilohotel.com/rv8/rvlinks/io360apwr.xls
 GRT - tables for mp_at_55%(rpm), mp_at_75%(rpm), delta_hp(pres.alt), also uses OAT. The delta-hp is a constant rpm, mp in the cruise range.
 MGL - formula (3 constant) http://www.mglavionics.co.za/Docs/MGL%20EFIS%20G2%20HP%20calculation.pdf

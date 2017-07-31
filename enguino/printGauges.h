@@ -1,4 +1,6 @@
-/// Implementation for printPrefix and pringGauge
+bool leanMode;
+int peakEGT[CYLINDERS];
+
 
 int scaleMark(const Sensor *s, int val) {
   if (val == FAULT)
@@ -341,10 +343,10 @@ void printGauge(const Gauge *g) {
       printRound(g);
       break;
     case gs_horiz:
-      printHorizontal(g, 4);
+      printHorizontal(g, CYLINDERS);
       break;
     case gs_egt:
-      printEGTHoriz(g, 4);
+      printEGTHoriz(g, CYLINDERS);
       break;
     case gs_infobox:
       printInfoBox();
