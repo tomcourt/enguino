@@ -27,8 +27,6 @@ In normal operation (for a fixed pitch prop) the tachometer and fuel for left an
 
 Whenever out of range indicators happen the display switch to showing the condition and the value, for example `OP L` / `10`. A 'warning' (red) out of range will be indicated by the first line blinking and the annunciator LED also blinking red. Pressing the pushbutton stops the blinking. Pressing it again cycles the display to the next information page. The annunciator LED continues to be red as long as the condition persists. In the case of a caution condition (yellow range) the annunciator LED turns yellow. When the engine isn't turning some alerts are suppressed.
 
-**TBD** Reenable alerts (or maybe just warnings) after x minute?
-
 ## Hardware
 
 The main board is a particular type of Arduino called the [Leonardo ETH]. This Arduino contains an  ethernet adapter which is then attached to the Stratux via an RJ-45 cable.
@@ -146,7 +144,7 @@ Browse to 192.168.0.111, confirm Engiuno panel shows up.
 
 The Leonardo is rated to run from 6-20 volts although they suggest keeping it between 7-12 volts. They claim to worry about the voltage regulator overheating and 'damaging the board', but the regulator chip (88% efficient) does have a thermal shutdown feature at 150 deg C. The text appears to be a carry over from previous Arduino's which used a linear supply.  
 
-The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing).
+The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing). Connected to the Aux display with most segments lit power consumed is about 140 mA. Pull ups will add some to this.
 
 **Leonardo Pins Mapping to ATmega 32U4**
 
@@ -194,15 +192,17 @@ For the voltage sensor a 4:1 voltage divider consisting of a 1k and 3.01k (1%) r
 
 The tachometer is supplied with 12 volts, its a hall effect sensor that returns about 10 volt pulses, 4 pulses per revolution.
 
-Vans manifold pressure sensor is 0-90mV which is too low to accurately measure with the Arduino. It was easiest to use a new manifold pressure sensor for this.
+Vans manifold pressure sensor is 0-90mV which is too low to accurately measure with the Arduino. It's easier to use a new manifold pressure sensor that has a 0-5 volt output.
 
 For a sensor that might contain a voltage higher than Vcc (such as Van's tachometer) using a voltage divider will cause a significant load which could create issues if still attached to a backup gauge. A 15K ohm resistor between the sensor and the pin will safely clip voltages between 20.5 and -15.5 volts. The goal here is to limit the internal clamping diodes in the Arduino's CPU to no more than 1ma after the .7 volt diode drop.
 
-The tachometer measures RPM by recording the uS time whenever the pin has a rising edge. RPM = 60,000,000 / (time - last_time). Other interrupt functions (thermocouple and time keeping) will cause occasional jitter. Collecting 8 samples, throwing out the highest and lowest and averaging the middle 4 fixes that.
+The tachometer measures RPM by recording the length of tim in uS time between rising edges on a pin. RPM = 60,000,000 / (time - last_time). Other interrupt functions (thermocouple and time keeping) will cause occasional jitter. Collecting 8 samples, throwing out the highest and lowest and averaging the middle 4 fixes that.
 
 ### Auxiliary Display
 
 The auxiliary display consists of two lines of a 4 digit [7 segment LED displays]. Both are strung together on the same i2c communication bus, but the bottom display has the A0 jumper soldered so they can be individually addressed. The displays have power (from the shield board), ground, a data line and a clock line going to them.
+
+Covering the LED displays with a dark red bezel makes them much easier to read in sunlight. A medium red gel filter behind clear plastic works well.
 
 A master caution/warning [bicolor LED] annunciator is reworked by soldering onto two unused display row of the top display.
 
@@ -227,28 +227,7 @@ The pushbutton is connected to ground on one side. The other side of the switch 
 * pushbutton switch - Digikey EG2015-ND
 * K style thermocouple wire, 24-26 gauge, EBay
 * Enclosure - Electrical box - B108R - Home Depot
-
-### Future stuff
-* Record engine data by having the Engiuno pipe text to a port on the Stratux. The startup script on the stratux starts netcat (nc) in the background to record the text to a file. The script would also truncate the file at on powerup to limit its growth.
-* It may be possible to support 2 (or maybe more) thermocouples without the thermocouple multiplexer shield by using the differential mode ADC, 40x gain and a CJC sensor(Analog TMP36). Only 8 bits are usable with 40x, the noisy lower bits help with oversampling though. 488 uV per count works out to 21.5 deg. F resolution with a K type thermocouple. The 2.56 volt internal reference would double the resolution and oversampling could probably quadruple it (16x oversample). ADC0 and ADC1 are the negative side, any other ADC pin may be positive. With a filtering cap (10nF) several thermocouples could share a pin. The internal ATMEGA temperature sensor needs both offset and gain calibration, a 10 deg-C rise is typical as well, 2 point calibration may be much to expect for users. **TBD** - move the voltage divider sensor to ADC5 to allow future use of thermocouples.
-* A custom shield would be helpful for the typical user who isn't proficient with a soldering iron, particularly if it were populated. Jumpers would select resistors and maybe filter caps. A thermocouple board that didn't interfere with the ADC would add 4 more analog inputs (perhaps a latch for the mux or an I2C thermocouple/mux like Linear's LTC2495CUHF#PBF). An ammeter feature will be desired by some, TI's INA170 High Side Current Shunt Monitor is probably a good part to implement this. Support 12 thermocouples for 6 cylinder? Support for 24 volt electrical system?
-* A custom aux display board would make Enguino easier to use. A single HT16K33 LED drive chip could be used for both displays as one chip can support 8 LED digits. A smaller 7 segment LED modules could be used to allow fitting the display in a 2.25" hole. A long posted tactile pushbutton switch mounted to the board that would go through a small hole on the display (similar to a digikey EG4356TR-ND) could replace the current switch. The switch wire could be eliminated from the harness if 2 or 3 separate switches are attached to the chip. More switches would be required as the chip can only detect presses, not holds.
-* The Arduino Yun would support airplanes lacking a Stratux. The code would need to use the 'bridge' objects instead of the ethernet objects. Use #ifdef AVR_YUN to flex the code.
-* Themes - a dark theme could be created easily enough by adjusting the styles. A larger text theme for the gauges would involve more defines and stringizing them for the SVG.
-* Create another TCP or UDP port that can be read from the Stratux (perhaps with netcat). This would be a comma separated text stream of engine data to be logged.
-* Use digitalFastWrite for smaller code - https://github.com/NicksonYap/digitalWriteFast
-* Percent power resources if I try to squeeze that in:
-table - www.kilohotel.com/rv8/rvlinks/o360apwr.xls www.kilohotel.com/rv8/rvlinks/io360apwr.xls
-GRT - tables for mp_at_55%(rpm), mp_at_75%(rpm), delta_hp(pres.alt), also uses OAT. The delta-hp is a constant rpm, mp in the cruise range.
-MGL - formula (3 constant) http://www.mglavionics.co.za/Docs/MGL%20EFIS%20G2%20HP%20calculation.pdf
-* STP power = (((((MAPmax - ((MAPmax - MAPnow) * K1)) / MAPmax) * RPMnow / RPMmax) ^ K2)
-* Altitude adjust = ((1 + K3) * (ATMO_PRESSstp / ATMO_PRESSnow) - K3)
-* Temperature adjust = SQRT((519 – (3.58 * PRESS_ALT_FT/1000)) / (460 + OAT_F))
-* K1 and K2 are very roughly .1. Default value for K3 is -.695
-* Power % = 100 * STP_Power * Altitude_Adjust * Temperature_Adjust
-O-320 power chart
- http://preflight.dynonavionics.com/2014/02/did-you-know-percent-power-dynon-way.html
-
+* Medium Red gel filter - Roscolux \#27 - Theater supply store
 
 [open source]:https://en.wikipedia.org/wiki/Open-source_model
 [Stratux]:http://stratux.me
