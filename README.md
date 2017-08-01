@@ -8,7 +8,7 @@ Enguino is intended to work with the [Stratux] ADS-B receiver which is also open
 
 The hardware consists of a tiny single board computer called an [Arduino]. This board is similar to the Raspberry Pi used in the Stratux, although the Arduino has a much simpler computer on it. Despite being a simple computer, the Arduino is much better at connecting to the real world.
 
-Enguino connects to 8 thermocouples for CHT and EGT, a tachometer, a fuel flow transducer and seven generic inputs.
+Enguino is the combination of the Arduino and and another board that connects to 8 thermocouples for CHT and EGT, a tachometer, a fuel flow transducer and seven generic inputs. Heres a [photo].
 
 Because Enguino is experimental, it is recommended that you don't replace your legally required gauges with Enguino until you've confirmed to yourself that its readings are accurate and reliable. Also tablets and and wifi communication alone shouldn't be counted upon for critical flight information. Furthermore you may not have a dedicated tablet for Enguino. For these reasons an auxiliary display is an optional part of Enguino. It consists of a simple LED display that normally displays tachometer and fuel gauges but can also display engine alarms and readings.
 
@@ -39,7 +39,7 @@ The prototyping area of either of the shields will have a number of resistors an
 
 On the tablet, attach to the Stratux wifi network, use the browser to navigate to 192.168.0.111, save the link to the home page. Go to the home screen and press the Enguino icon, the web page will open up in full screen.
 
-The firmware is installed on the Arduino using the Arduino IDE. First install the [Arduino IDE]. Add the Ethernet 2 libary **TBD** add detailed instructions. Then download the [Enguino source code]. Configuration is done before installing the firmware although you can install it many times. For now just install the default configuration. Configuration involves editing the config.h file. After editing the configuration, connect the Arduino to your PC via a USB cable. This will also power up the Arduino and a green light will appear next to the USB connector. Start up the Arduino software on your PC. Go `File`, `Open` and select the file `enigno.ino`. Then go `Sketch` and `Upload`. The other green LED next to the power LED will flash until the file is uploaded. Done Uploading will appear near the bottom of the window.
+The firmware is installed on the Arduino using the Arduino IDE. First install the [Arduino IDE]. Add the Ethernet 2 libary **TBD** add detailed instructions. Then download the [Enguino source code]. For now just install the default configuration. Configuration involves editing the config.h file and then reinstalling the firmware. After editing the configuration, connect the Arduino to your PC via a USB cable. This will also power up the Arduino and a green light will appear next to the USB connector. Start up the Arduino software on your PC. Go `File`, `Open` and select the file `enigno.ino`. Then go `Sketch` and `Upload`. The other green LED next to the power LED will flash until the file is uploaded. Done Uploading will appear near the bottom of the window.
 
 ## Configuration
 
@@ -96,9 +96,9 @@ Each line can be associated with a sensor. If the first line has text and is ass
 Otherwise the sensors numeric value will be shown. The default page is tachometer on the top and fuel gauges on the bottom. Avoid having more than one unlabelled page as the numbers may be ambiguous.
 
 ## Stratux
-The Stratux is configured to route network traffic between the wired ethernet to the Enguino and the wifi connecting to a tablet. Note - these instructions are for Stratux v0.8r2, newer versions may require modification.
+The Stratux is configured to route network traffic between the wired ethernet to the Enguino and the wifi connecting to a tablet.
 
-* Boot the Stratux. For first boot, wait 3 minutes, for rebooting wait 30 seconds.
+* Boot the Stratux. For first boot after installing a fresh micro-SD card wait 3 minutes, for rebooting wait 30 seconds.
 * Either connect a monitor and keyboard to the Rapberry Pi and login with un: `pi`, pw: `raspberry` then skip ahead in these instructions to sudo nano...
 * Or connect to the Stratux wifi network (this will need to be repeated when rebooting)
 * On the Mac, start terminal. On a Windows PC, run PuTTY.
@@ -135,8 +135,8 @@ Ctrl-o, enter, ctrl-x
 
 Reboot.  
 Connect to Stratux wireless network again.  
-Browse to 192.168.10.1, confirm Stratux control panel shows up.  
-Browse to 192.168.0.111, confirm Engiuno panel shows up.
+Browse to 192.168.10.1, confirm the Stratux control panel shows up.  
+Browse to 192.168.0.111, confirm the Engiuno panel shows up.
 
 ## Design Details
 
@@ -231,7 +231,8 @@ The pushbutton is connected to ground on one side. The other side of the switch 
 
 [open source]:https://en.wikipedia.org/wiki/Open-source_model
 [Stratux]:http://stratux.me
-[example]:http://www.tcourt.net/efis
+[example]:http:efis.html
+[photo]:http:Enguino.jpg
 [Arduino]:https://www.arduino.cc
 [Leonardo ETH]:http://www.arduino.org/products/boards/arduino-leonardo-eth
 [thermocouple shield]:https://oceancontrols.com.au/KTA-259.html

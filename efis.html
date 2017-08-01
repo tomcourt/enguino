@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta http-equiv='refresh' content='1'/>
+<style>
+.segment { stroke:gray; stroke-width:20; }
+.rectgauge  {  fill:none; stroke:black; stroke-width:40; }
+.roundgauge {  fill:none; stroke:black; }
+.label  { fill:dimgrey; text-anchor:middle; font-size:500px; }
+.value  { fill:black; text-anchor:middle; font-size:500px; }
+.number { fill:dimgrey; text-anchor:start; font-size:300px; alignment-baseline:central; }
+.mnumber { fill:dimgrey; text-anchor:middle; font-size:300px; alignment-baseline:central; }
+.unit   { fill:dimgrey; text-anchor:middle; font-size:300px; }
+.abutton { fill:lightgrey; stroke:black; stroke-width:40; }
+.indicator { fill:black }
+</style>
+</head>
+<body>
+<svg viewBox='0 0 13330 10000' style='display:block; position:absolute; top:5%; left:5%; width:90%; height:90%;'>
+<defs>
+<g id='hmark'>
+<path d='M0 310 l-50 -50 v-520 l50 -50 l50 50 v520 Z' class='indicator'>
+</g>
+<g id='xmark'>
+<path d='M0 220 l-150 150 h300 Z ' class='indicator'>
+</g>
+<g id='vmark'>
+<path d='M310 0 l-50 -50 h-520 l-50 50 l50 50 h520 Z' class='indicator'>
+</g>
+</defs>
+<g transform='translate(3500 0)'>
+<rect x='400' y='1100' width='400' height='4000' class='rectgauge'/>
+<rect fill='red' x='400' y='4100' width='400' height='1000'/>
+<rect fill='yellow' x='400' y='2900' width='400' height='1200'/>
+<rect fill='green' x='400' y='1300' width='400' height='1600'/>
+<rect fill='red' x='400' y='1100' width='400' height='200'/>
+<line class='segment' x1='250' y1='1900' x2='950' y2='1900'/>
+<text x='1000' y='1900' class='number'>80</text>
+<line class='segment' x1='250' y1='2700' x2='950' y2='2700'/>
+<text x='1000' y='2700' class='number'>60</text>
+<line class='segment' x1='250' y1='3500' x2='950' y2='3500'/>
+<text x='1000' y='3500' class='number'>40</text>
+<line class='segment' x1='250' y1='4300' x2='950' y2='4300'/>
+<text x='1000' y='4300' class='number'>20</text>
+<text x='600' y='500' class='label'>OIL</text>
+<text x='600' y='920' class='label'>PRES</text>
+<text x='600' y='5900' class='unit'>psi</text>
+<rect x='100' y='5175' width='1000' height='500' rx='90' ry='90' fill='yellow'/>
+<text x='600' y='5600' class='value'>50</text>
+<use xlink:href='#vmark' x='600' y='3100'/>
+</g>
+<g transform='translate(5250 0)'>
+<rect x='400' y='1100' width='400' height='4000' class='rectgauge'/>
+<rect fill='yellow' x='400' y='3300' width='400' height='1800'/>
+<rect fill='green' x='400' y='1200' width='400' height='2100'/>
+<rect fill='red' x='400' y='1100' width='400' height='100'/>
+<line class='segment' x1='250' y1='2100' x2='950' y2='2100'/>
+<text x='1000' y='2100' class='number'>200</text>
+<line class='segment' x1='250' y1='3100' x2='950' y2='3100'/>
+<text x='1000' y='3100' class='number'>150</text>
+<line class='segment' x1='250' y1='4100' x2='950' y2='4100'/>
+<text x='1000' y='4100' class='number'>100</text>
+<text x='600' y='500' class='label'>OIL</text>
+<text x='600' y='920' class='label'>TEMP</text>
+<text x='600' y='5900' class='unit'>&deg;F</text>
+<rect x='100' y='5175' width='1000' height='500' rx='90' ry='90' fill='yellow'/>
+<text x='600' y='5600' class='value'>67</text>
+<use xlink:href='#vmark' x='600' y='4757'/>
+</g>
+<g transform='translate(7000 0)'>
+<rect x='400' y='1100' width='400' height='4000' class='rectgauge'/>
+<rect fill='red' x='400' y='4400' width='400' height='700'/>
+<rect fill='yellow' x='400' y='3100' width='400' height='1300'/>
+<rect fill='green' x='400' y='1770' width='400' height='1330'/>
+<rect fill='yellow' x='400' y='1200' width='400' height='570'/>
+<rect fill='red' x='400' y='1100' width='400' height='100'/>
+<line class='segment' x1='250' y1='2430' x2='950' y2='2430'/>
+<text x='1000' y='2430' class='number'>14</text>
+<line class='segment' x1='250' y1='3770' x2='950' y2='3770'/>
+<text x='1000' y='3770' class='number'>12</text>
+<text x='600' y='500' class='label'></text>
+<text x='600' y='920' class='label'>VOLT</text>
+<text x='600' y='5900' class='unit'>volt</text>
+<text x='600' y='5600' class='value'>14.1</text>
+<use xlink:href='#vmark' x='600' y='2319'/>
+</g>
+<g transform='translate(8750 0)'>
+<rect x='400' y='1100' width='400' height='4000' class='rectgauge'/>
+<rect fill='red' x='400' y='4900' width='400' height='200'/>
+<rect fill='yellow' x='400' y='4300' width='400' height='600'/>
+<rect fill='green' x='400' y='2700' width='400' height='1600'/>
+<rect fill='yellow' x='400' y='1900' width='400' height='800'/>
+<rect fill='red' x='400' y='1100' width='400' height='800'/>
+<line class='segment' x1='250' y1='1900' x2='950' y2='1900'/>
+<text x='1000' y='1900' class='number'>8</text>
+<line class='segment' x1='250' y1='2700' x2='950' y2='2700'/>
+<text x='1000' y='2700' class='number'>6</text>
+<line class='segment' x1='250' y1='3500' x2='950' y2='3500'/>
+<text x='1000' y='3500' class='number'>4</text>
+<line class='segment' x1='250' y1='4300' x2='950' y2='4300'/>
+<text x='1000' y='4300' class='number'>2</text>
+<text x='600' y='500' class='label'>FUEL</text>
+<text x='600' y='920' class='label'>PRES</text>
+<text x='600' y='5900' class='unit'>psi</text>
+<rect x='100' y='5175' width='1000' height='500' rx='90' ry='90' fill='red'/>
+<text x='600' y='5600' class='value'>8.3</text>
+<use xlink:href='#vmark' x='600' y='1757'/>
+</g>
+<g transform='translate(10500 0)'>
+<text x='1350' y='500' class='label'>FUEL</text>
+<rect x='400' y='1100' width='400' height='4000' class='rectgauge'/>
+<rect fill='red' x='400' y='4475' width='400' height='625'/>
+<rect fill='yellow' x='400' y='3850' width='400' height='625'/>
+<rect fill='green' x='400' y='1100' width='400' height='2750'/>
+<line class='segment' x1='250' y1='1350' x2='950' y2='1350'/>
+<line class='segment' x1='250' y1='2600' x2='950' y2='2600'/>
+<line class='segment' x1='250' y1='3850' x2='950' y2='3850'/>
+<line class='segment' x1='250' y1='4475' x2='950' y2='4475'/>
+<text x='600' y='920' class='label'>LEFT</text>
+<text x='600' y='5900' class='unit'>gal</text>
+<text x='600' y='5600' class='value'>13.8</text>
+<use xlink:href='#vmark' x='600' y='1632'/>
+<g transform='translate(1500 0)'><rect x='400' y='1100' width='400' height='4000' class='rectgauge'/>
+<rect fill='red' x='400' y='4475' width='400' height='625'/>
+<rect fill='yellow' x='400' y='3850' width='400' height='625'/>
+<rect fill='green' x='400' y='1100' width='400' height='2750'/>
+<line class='segment' x1='250' y1='1350' x2='950' y2='1350'/>
+<line class='segment' x1='250' y1='2600' x2='950' y2='2600'/>
+<line class='segment' x1='250' y1='3850' x2='950' y2='3850'/>
+<line class='segment' x1='250' y1='4475' x2='950' y2='4475'/>
+<text x='600' y='920' class='label'>RGT</text>
+<text x='600' y='5900' class='unit'>gal</text>
+<rect x='100' y='5175' width='1000' height='500' rx='90' ry='90' fill='yellow'/>
+<text x='600' y='5600' class='value'>3.7</text>
+<use xlink:href='#vmark' x='600' y='4163'/>
+</g>
+<text x='1350' y='1350' class='mnumber'>15</text>
+<text x='1350' y='2600' class='mnumber'>10</text>
+<text x='1350' y='3850' class='mnumber'>5</text>
+<text x='1350' y='4475' class='mnumber'>2.5</text>
+</g>
+<g transform='translate(100 0)'>
+<g transform='translate(1500 1800)'>
+<path d='M-1114 670 A 1300 1300 0 1 1 1114 670' fill='none' stroke='black' stroke-width='450' />
+<path d='M-1126 650A 1300 1300 0 0 1 -1280 -238' fill='none' stroke-width='400' stroke='yellow'/>
+<path d='M-1280 -238A 1300 1300 0 0 1 1292 124' fill='none' stroke-width='400' stroke='green'/>
+<path d='M1292 124A 1300 1300 0 0 1 1126 650' fill='none' stroke-width='400' stroke='red'/>
+<text x='0' y='-200' class='label'>TACH</text>
+<text x='0' y='5900' 700='unit'>rpm</text>
+<text x='0' y='350' class='value'>1145</text>
+<text x='0' y='700' class='unit'>rpm</text>
+<use xlink:href='#vmark' x='-1300' y='0' transform='rotate(61.8)'/>
+</g>
+</g>
+<g transform='translate(100 3200)'>
+<g transform='translate(1500 1800)'>
+<path d='M-1114 670 A 1300 1300 0 1 1 1114 670' fill='none' stroke='black' stroke-width='450' />
+<path d='M-1126 650A 1300 1300 0 1 1 1126 650' fill='none' stroke-width='400' stroke='green'/>
+<text x='0' y='-200' class='label'>MP</text>
+<text x='0' y='5900' 700='unit'>in-hg</text>
+<text x='0' y='350' class='value'>13.1</text>
+<text x='0' y='700' class='unit'>in-hg</text>
+<use xlink:href='#vmark' x='-1300' y='0' transform='rotate(0.0)'/>
+</g>
+</g>
+<g transform='translate(3000 6300)'>
+<rect x='1100' y='600' width='8000' height='400' class='rectgauge'/>
+<rect fill='yellow' x='1100' y='600' height='400' width='1000'/>
+<rect fill='green' x='2100' y='600' height='400' width='5000'/>
+<rect fill='yellow' x='7100' y='600' height='400' width='1940'/>
+<rect fill='red' x='9040' y='600' height='400' width='60'/>
+<rect x='0' y='550' width='1000' height='500' rx='90' ry='90' fill='yellow'/>
+<text x='500' y='800' class='value' alignment-baseline='central'>421</text>
+<use xlink:href='#hmark' y='800' x='7537'/>
+<rect x='1100' y='1400' width='8000' height='400' class='rectgauge'/>
+<rect fill='yellow' x='1100' y='1400' height='400' width='1000'/>
+<rect fill='green' x='2100' y='1400' height='400' width='5000'/>
+<rect fill='yellow' x='7100' y='1400' height='400' width='1940'/>
+<rect fill='red' x='9040' y='1400' height='400' width='60'/>
+<text x='500' y='1600' class='value' alignment-baseline='central'>278</text>
+<use xlink:href='#hmark' y='1600' x='4662'/>
+<rect x='1100' y='2200' width='8000' height='400' class='rectgauge'/>
+<rect fill='yellow' x='1100' y='2200' height='400' width='1000'/>
+<rect fill='green' x='2100' y='2200' height='400' width='5000'/>
+<rect fill='yellow' x='7100' y='2200' height='400' width='1940'/>
+<rect fill='red' x='9040' y='2200' height='400' width='60'/>
+<rect x='0' y='2150' width='1000' height='500' rx='90' ry='90' fill='yellow'/>
+<text x='500' y='2400' class='value' alignment-baseline='central'>143</text>
+<use xlink:href='#hmark' y='2400' x='1975'/>
+<rect x='1100' y='3000' width='8000' height='400' class='rectgauge'/>
+<rect fill='yellow' x='1100' y='3000' height='400' width='1000'/>
+<rect fill='green' x='2100' y='3000' height='400' width='5000'/>
+<rect fill='yellow' x='7100' y='3000' height='400' width='1940'/>
+<rect fill='red' x='9040' y='3000' height='400' width='60'/>
+<text x='500' y='3200' class='value' alignment-baseline='central'>231</text>
+<use xlink:href='#hmark' y='3200' x='3725'/>
+<line class='segment' y1='450' x1='3100' y2='3550' x2='3100'/>
+<text y='300' x='3100' class='mnumber'>200&deg;F</text>
+<line class='segment' y1='450' x1='5100' y2='3550' x2='5100'/>
+<text y='300' x='5100' class='mnumber'>300&deg;F</text>
+<line class='segment' y1='450' x1='7100' y2='3550' x2='7100'/>
+<text y='300' x='7100' class='mnumber'>400&deg;F</text>
+<text x='500' y='250' class='label' alignment-baseline='central';>CHT</text>
+</g>
+<g transform='translate(3000 6300)'>
+<text x='9700' y='800' class='value' alignment-baseline='central'>1178</text>
+<use xlink:href='#xmark' y='800' x='3475'/>
+<text x='9700' y='1600' class='value' alignment-baseline='central'>1426</text>
+<use xlink:href='#xmark' y='1600' x='6787'/>
+<text x='9700' y='2400' class='value' alignment-baseline='central'>1079</text>
+<use xlink:href='#xmark' y='2400' x='2162'/>
+<text x='9700' y='3200' class='value' alignment-baseline='central'>1046</text>
+<use xlink:href='#xmark' y='3200' x='1725'/>
+<text y='3700' x='3100' class='mnumber'>1150&deg;</text>
+<text y='3700' x='5100' class='mnumber'>1300&deg;</text>
+<text y='3700' x='7100' class='mnumber'>1450&deg;</text>
+<text x='9700' y='250' class='label' alignment-baseline='central';>EGT</text>
+</g>
+</svg>
+</body>
+</html>
