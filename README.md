@@ -14,9 +14,11 @@ Because Enguino is experimental, it is recommended that you don't replace your l
 
 ## Aux Display
 
-The auxiliary display will fit in a 3 1/8" cutout. It consists primarily of two lines of 4 digit 7 segment LED displays. Limited text is also shown on the display.
+The auxiliary display will fit in a 3 1/8" cutout. Here is an [Aux Display photo] of the prototype. This is the default page for a fixed pitch prop airplane. It is showing RPM's on top and left and right fuel in gallons on the bottom. The red LED in top shows a warning alarm is active.
 
-A master caution/warning annunciator, a multi-colored LED is on top. If any gauge, even those not currently being shown, is in the red range it will show red, if any in is in the yellow range it will show yellow, otherwise it will show green.
+It consists primarily of two lines of 4 digit 7 segment LED displays. Limited text is also shown on the display.
+
+The master caution/warning annunciator, a multi-colored LED is on top. If any gauge, even those not currently being shown, is in the red range it will show red, if any in is in the yellow range it will show yellow, otherwise it will show green.
 
 A pushbutton is below the display. Tapping the button acknowledges an alert if one is displayed, otherwise it switches to the next page of information. Holding it for at least a second redisplays all alerts that have been suppressed. Holding it for 3 seconds or more toggles dimming the display for night flight.
 
@@ -231,8 +233,9 @@ The pushbutton is connected to ground on one side. The other side of the switch 
 
 [open source]:https://en.wikipedia.org/wiki/Open-source_model
 [Stratux]:http://stratux.me
-[example]:http:efis.html
-[photo]:http:Enguino.jpg
+[example]:http://htmlpreview.github.com/?https://github.com/tomcourt/enguino/blob/master/efis.html
+[photo]:https://github.com/tomcourt/enguino/blob/master/Enguino.jpg
+[Aux Display photo]:https://github.com/tomcourt/enguino/blob/master/AuxDisplay.jpg
 [Arduino]:https://www.arduino.cc
 [Leonardo ETH]:http://www.arduino.org/products/boards/arduino-leonardo-eth
 [thermocouple shield]:https://oceancontrols.com.au/KTA-259.html
