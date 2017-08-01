@@ -14,9 +14,9 @@ Because Enguino is experimental, it is recommended that you don't replace your l
 
 ## Aux Display
 
-The auxiliary display will fit in a 3 1/8" cutout. Here is an [Aux Display photo] of the prototype. This is the default page for a fixed pitch prop airplane. It is showing RPM's on top and left and right fuel in gallons on the bottom. The red LED in top shows a warning alarm is active.
+The auxiliary display will fit in a 3 1/8" cutout. Here is a [photo of the prototype]. It is showing the default page for a fixed pitch prop airplane. It is showing RPM's on top and left and right fuel in gallons on the bottom. The red LED in top shows a warning alarm is active.
 
-It consists primarily of two lines of 4 digit 7 segment LED displays. Limited text is also shown on the display.
+In the middle is a two lines of 4 digit 7 segment LED displays. Limited text is also shown on the display.
 
 The master caution/warning annunciator, a multi-colored LED is on top. If any gauge, even those not currently being shown, is in the red range it will show red, if any in is in the yellow range it will show yellow, otherwise it will show green.
 
@@ -41,7 +41,9 @@ The prototyping area of either of the shields will have a number of resistors an
 
 On the tablet, attach to the Stratux wifi network, use the browser to navigate to 192.168.0.111, save the link to the home page. Go to the home screen and press the Enguino icon, the web page will open up in full screen.
 
-The firmware is installed on the Arduino using the Arduino IDE. First install the [Arduino IDE]. Add the Ethernet 2 libary **TBD** add detailed instructions. Then download the [Enguino source code]. For now just install the default configuration. Configuration involves editing the config.h file and then reinstalling the firmware. After editing the configuration, connect the Arduino to your PC via a USB cable. This will also power up the Arduino and a green light will appear next to the USB connector. Start up the Arduino software on your PC. Go `File`, `Open` and select the file `enigno.ino`. Then go `Sketch` and `Upload`. The other green LED next to the power LED will flash until the file is uploaded. Done Uploading will appear near the bottom of the window.
+The firmware is installed on the Arduino using the Arduino IDE. First install the [Arduino IDE]. Add the Ethernet 2 library by selecting 'Sketch' in the menu, 'Include Library' and 'Manage Libraries...', scroll down to 'Ethernet2' and press 'Install'. Then download the [Enguino source code] to a folder.
+
+ For now just install the default configuration. Configuration involves editing the config.h file and then reinstalling the firmware. After editing the configuration, connect the Arduino to your PC via a USB cable. This will also power up the Arduino and a green light will appear next to the USB connector. Start up the Arduino software on your PC. Go `File`, `Open` and select the file `enigno.ino`. Then go `Sketch` and `Upload`. The other green LED next to the power LED will flash until the file is uploaded. Done Uploading will appear near the bottom of the window.
 
 ## Configuration
 
@@ -231,11 +233,18 @@ The pushbutton is connected to ground on one side. The other side of the switch 
 * Enclosure - Electrical box - B108R - Home Depot
 * Medium Red gel filter - Roscolux \#27 - Theater supply store
 
+## Status
+Test flying in RV-6A in parallel with its analog gauges for critical functions (OT, OP, FP, Tach and fuel gauges).
+
+Currently I only have the prototype so I have to remove it to test changes.
+
+Also looking for a volunteer with an EE-bent to help design and layout a better shield and auxiliary display board.
+
 [open source]:https://en.wikipedia.org/wiki/Open-source_model
 [Stratux]:http://stratux.me
 [example]:http://htmlpreview.github.com/?https://github.com/tomcourt/enguino/blob/master/efis.html
 [photo]:https://github.com/tomcourt/enguino/blob/master/Enguino.jpg
-[Aux Display photo]:https://github.com/tomcourt/enguino/blob/master/AuxDisplay.jpg
+[photo of the prototype]:https://github.com/tomcourt/enguino/blob/master/AuxDisplay.jpg
 [Arduino]:https://www.arduino.cc
 [Leonardo ETH]:http://www.arduino.org/products/boards/arduino-leonardo-eth
 [thermocouple shield]:https://oceancontrols.com.au/KTA-259.html
