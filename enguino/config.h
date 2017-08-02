@@ -1,6 +1,27 @@
-// Configuration file, assumes Carburated Lycoming O-360 or O-320 with Van's Aircraft sensors. Fuel level senders are Van's for the RV-6.
+// Copyright 2017, Thomas Court
+//
+// User configuration for enguino
+// ------------------------------
+// This configuration file assumes Carburated Lycoming O-360 or O-320 with Van's Aircraft sensors. Fuel level senders are Van's for the RV-6.
 // Confirm the yellow and red line (cauation and warning) numbers are correct for your engine. Confirm that your sensors are compatible. 
 // And most importanly confirm that your fuel gauges are correctly reflect fuel in the tank from full to empty.
+
+//  This file is part of Enguino.
+//  
+//  Enguino is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//  
+//  Enguino is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//  
+//  You should have received a copy of the GNU General Public License
+//  along with Enguino.  If not, see <http://www.gnu.org/licenses/>.
+
+
 
 #define TACH_DIVIDER 4
 

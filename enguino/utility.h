@@ -1,3 +1,25 @@
+// Copyright 2017, Thomas Court
+//
+// Utility functions for Enguino
+// -----------------------------
+//
+//  This file is part of Enguino.
+//  
+//  Enguino is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//  
+//  Enguino is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//  
+//  You should have received a copy of the GNU General Public License
+//  along with Enguino.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
 // compile time sin() and cos() for calculating round gauges position in an x, y plane (sin/cos only work from -pi/2 to pi/2)
 // https://github.com/pkhuong/polynomial-approximation-catalogue/tree/master/double
 #define SIN(x)  ( (x) + -0.166656810730001*(x)*(x)*(x) + 0.008312366210465815*(x)*(x)*(x)*(x)*(x) + -1.8492181558254177e-4*(x)*(x)*(x)*(x)*(x)*(x)*(x) )
@@ -109,7 +131,7 @@ int interpolate(const InterpolateTable *table, int value) {
 }
 
 // sort a small list using insertion sort O(n^2) worst case
-void sort(int *list, int n) {
+void sort(int *list, byte n) {
   for (byte i=1; i<n; i++) {
     for (byte j=i; j>0 && list[j-1] > list[j]; j--) {
       int t = list[j];

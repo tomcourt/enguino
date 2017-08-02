@@ -1,3 +1,5 @@
+// Copyright 2017, Thomas Court
+//
 // Persistant vairable storage
 // ---------------------------
 // Reads and writes 8 byte buffers to EEPROM.
@@ -5,6 +7,23 @@
 // ee_settings is for variables that don't often change. This can be updated up to 10,000 times.
 // ee_status is for variables that change often. It is written across many locations in EEPROM 
 // for wear-leaveling. It can be updated up to 600,000 times. 
+//
+//  This file is part of Enguino.
+//  
+//  Enguino is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//  
+//  Enguino is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//  
+//  You should have received a copy of the GNU General Public License
+//  along with Enguino.  If not, see <http://www.gnu.org/licenses/>.
+
+
 
 #include <EEPROM.h>
 
