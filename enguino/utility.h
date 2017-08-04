@@ -4,17 +4,17 @@
 // -----------------------------
 //
 //  This file is part of Enguino.
-//  
+//
 //  Enguino is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-//  
+//
 //  Enguino is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//  
+//
 //  You should have received a copy of the GNU General Public License
 //  along with Enguino.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -34,17 +34,17 @@
 void logTime(unsigned long start, const char *description) {
   Serial.print(description);
   Serial.print(' ');
-  Serial.print(int(millis()-start));
+  Serial.print(short(millis()-start));
   Serial.print("ms\n");
 }
 
-void logValue(int val, const char *description) {
+void logValue(short val, const char *description) {
   Serial.print(description);
   Serial.print('=');
   Serial.println(val);
  }
 
-void logValue(int val, int num) {
+void logValue(short val, short num) {
   Serial.print(num);
   Serial.print('=');
   Serial.println(val);
@@ -54,17 +54,18 @@ void logText(const char *text = "") {
   Serial.println(text);
 }
 
-#if DEBUG
-volatile int minFreeRam = 10000;
+#if DEBUG && __AVR__
+volatile short minFreeRam = 10000;
 
 void checkFreeRam() {
-  extern int __heap_start, *__brkval; 
-  int n = (int) &n - (__brkval == 0 ? (int) &__heap_start : (int) __brkval); 
+  extern short __heap_start, *__brkval;
+  short n = (short) &n - (__brkval == 0 ? (short) &__heap_start : (short) __brkval);
   if (n < minFreeRam)
     minFreeRam = n;
 }
 #endif
 
+#if __AVR__
 // https://github.com/rekka/avrmultiplication
 // signed16 * signed16
 // 22 cycles
@@ -94,36 +95,41 @@ asm volatile ( \
 : \
 "r26" \
 )
+#endif
 
 // multiply 16 x 16 signed values and return the 32 bit result
 // this is a smaller and faster version of: (long(a) * long(b);
-long multiply(int a, int b) {
+long multiply(short a, short b) {
+#if __AVR__
   long res;
 
   MultiS16X16to32(res, a, b);
   return res;
+#else
+  return long(a) * long(b);
+#endif
 }
 
-int multiplyAndScale(int a, int b, byte shift) {
-  return int((multiply(a, b) + (1<<(shift-1))) >> shift);
+short multiplyAndScale(short a, short b, byte shift) {
+  return short((multiply(a, b) + (1<<(shift-1))) >> shift);
 }
 
 // interpolate values using table, returns FAULT instead of extrapolating
-int interpolate(const InterpolateTable *table, int value) {
-  int x = table->start;
+short interpolate(const InterpolateTable *table, short value) {
+  short x = table->start;
   if (value < x)
     return FAULT;
-  int i = table->n;
-  byte *diff = table->log2diff;
-  int  *result = table->result;
+  short i = table->n;
+  const byte *diff = table->log2diff;
+  const short  *result = table->result;
   for(;;) {
     if (value == x)
       return *result;
     if (--i == 0)
       return FAULT;
-    int x1 = x + (1 << *diff);
-    if (value < x1) 
-      return int((multiply(*result,x1-value) + multiply(result[1], value-x)) >> *diff);
+    short x1 = x + (1 << *diff);
+    if (value < x1)
+      return short((multiply(*result,x1-value) + multiply(result[1], value-x)) >> *diff);
     x = x1;
     diff++;
     result++;
@@ -131,13 +137,12 @@ int interpolate(const InterpolateTable *table, int value) {
 }
 
 // sort a small list using insertion sort O(n^2) worst case
-void sort(int *list, byte n) {
+void sort(short *list, byte n) {
   for (byte i=1; i<n; i++) {
     for (byte j=i; j>0 && list[j-1] > list[j]; j--) {
-      int t = list[j];
+      short t = list[j];
       list[j] = list[j-1];
       list[j-1] = t;
     }
   }
 }
-

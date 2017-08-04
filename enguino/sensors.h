@@ -26,13 +26,13 @@
 
 #define HOBBS_COUNT_INTERVAL (3600/40)    // update hobbs 40 times an hour
 
-extern volatile int tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal reference temp, disable IRQ's to access these
+extern volatile short tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal reference temp, disable IRQ's to access these
 
-int adcSample[12][4];
+short adcSample[12][4];
 byte adcIndex;
 
 volatile bool tachDidPulse;
-volatile int rpm[8];
+volatile short rpm[8];
 
 volatile word fflowCount;
 volatile word fflowRunning;
@@ -43,41 +43,44 @@ byte ffRunningInx;
 byte hobbsCount = HOBBS_COUNT_INTERVAL/2;  // in order to prevent cumulative hobbs error assume half a hobbs count of engine run time was lost on last shutdown
 
 
-
-const InterpolateTable thermistor = {
-  64, 32,
-  (byte []) { 
-    3,3,3,3,3,3,4,4,
-    4,4,4,4,4,5,5,5,
-    5,5,6,6,7,6,6,5,
-    5,5,5,4,4,4,4    
-  },
-  (int []) { 
-    1500,1438,1384,1336,1293,1254,1219,1155,
-    1100,1051,1008,968,932,898,838,784,
-    736,692,650,575,505,375,310,241,
-    204,164,121,72,44,14,-19,-58
-  }
+static const byte thermistorBS[] = { 
+  3,3,3,3,3,3,4,4,
+  4,4,4,4,4,5,5,5,
+  5,5,6,6,7,6,6,5,
+  5,5,5,4,4,4,4    
 };
 
-const InterpolateTable r240to33 = {
-  48,  28,
-  (byte []){ 
-    5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 
-    4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
-  },
-  (int []){ 
-    1105, 1064, 1019, 972, 921, 894, 866,
-     837,  806,  775, 742, 707, 671, 634,
-     595,  553,  510, 465, 417, 367, 314,
-     258,  199,  137,  70,   0, -75, -155
-  }
+static const short thermistorYV[] = { 
+  1500,1438,1384,1336,1293,1254,1219,1155,
+  1100,1051,1008,968,932,898,838,784,
+  736,692,650,575,505,375,310,241,
+  204,164,121,72,44,14,-19,-58
 };
+
+const InterpolateTable thermistor = { 64, 32, thermistorBS, thermistorYV }; 
+
+static const byte r240to33BS[] = { 
+  5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 
+  4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4 
+};
+
+static const short r240to33YV[] = { 
+  1105, 1064, 1019, 972, 921, 894, 866,
+   837,  806,  775, 742, 707, 671, 634,
+   595,  553,  510, 465, 417, 367, 314,
+   258,  199,  137,  70,   0, -75, -155  
+};
+
+const InterpolateTable r240to33 = { 48,  28, r240to33BS, r240to33YV };
+
+
 
 #if SIMULATE_SENSORS
+#define ADC_MP(x) (short)(1000L*((x)-3.117)/32.811 +.5)
+
 byte simState = 0;
 
-int simulate[3][24] = {
+short simulate[3][24] = {
 {  
   1000L*14/20,          // 14 v
   // 1024*12/20,          // 12 v
@@ -87,7 +90,7 @@ int simulate[3][24] = {
   1000L*10/16,    // 10 gal
   1000L*2/16,   // 2 gal
   0, 0,
-  0, 1000L*(30-3.117)/32.811, 0, 0, 4321, 3500, 121, 2800,
+  0, ADC_MP(30), 0, 0, 4321, 3500, 121, 2800,
   310*4,320*4,330*4,340*4,        // CHT
   1100*4,1200*4,1300*4,1400*4     // EGT
 },
@@ -99,7 +102,7 @@ int simulate[3][24] = {
   1000L*10/16,    // 10 gal
   1000L*5/16,   // 5 gal
   0, 0,
-  0, 1000L*(20-3.117)/32.811, 0, 0, 4321, 3500, 122, 2300,
+  0, ADC_MP(20), 0, 0, 4321, 3500, 122, 2300,
   310*4,320*4,330*4,340*4,        // CHT
   1100*4,1200*4,1300*4,1400*4     // EGT
 },
@@ -111,7 +114,7 @@ int simulate[3][24] = {
   1000L*10/16,    // 10 gal
   1000L*5/16,   // 5 gal
   0, 0,
-  0, 1000L*(10-3.117)/32.811, 0, 0, 4321, 3500, 123, 0, 
+  0, ADC_MP(10), 0, 0, 4321, 3500, 123, 0, 
   310*4,320*4,330*4,340*4,        // CHT
   1100*4,1200*4,1300*4,1400*4     // EGT
 }
@@ -131,7 +134,7 @@ inline void updateTach() {
   if (tachDidPulse)
     tachDidPulse = false;
   else
-    memset(rpm, 0, sizeof(rpm));
+    memset((void *)rpm, 0, sizeof(rpm));
   interrupts();
 }
 
@@ -176,8 +179,8 @@ void updateADC() {
   adcIndex &= 3;
 }
 
-int average4(int *samples) {
-  int avg = 0;
+short average4(short *samples) {
+  short avg = 0;
   for (byte i=0; i<4; i++)
     avg += *samples++;
   return avg>>2;
@@ -194,27 +197,27 @@ void sensorSetup() {
   fflowCount = ee_settings.kFactor >> 1;  // in order to prevent cumulative fuel consumed error assume half a k-factor of a gallon was lost on last shutdown
 }
 
-int readSensor(const Sensor *s, byte n = 0) {
-  int p = s->pin + n;
+short readSensor(const Sensor *s, byte n = 0) {
+  short p = s->pin + n;
   
 #if SIMULATE_SENSORS
     if (p < 0)
       return FAULT;
     return simulate[simState][p&(DUAL_BIT-1)]; 
 #else
-    int v;
+    short v;
     if (p < 0)
       return FAULT;
     p &= (DUAL_BIT-1);
     
-    int t = s->type;
-    int toF = 0;
+    short t = s->type;
+    short toF = 0;
     if (p == HOBBS_SENSOR) { // Hobbs hours*10 (lowest 4 digits)
       v = ee_status.hobbs >> 2;
     }
     else if (p == FUELF_SENSOR) {      // Fuel flow GPH*10
       noInterrupts();
-      v = int((multiply(fflowRate, int(10*3600L/40/2)) + (ee_settings.kFactor>>1)) / ee_settings.kFactor);
+      v = short((multiply(fflowRate, int(10*3600L/40/2)) + (ee_settings.kFactor>>1)) / ee_settings.kFactor);
       interrupts();
     }
     else if (p == FUELR_SENSOR) { // Fuel remaining Gallons*10 (totalizer)
@@ -226,7 +229,7 @@ int readSensor(const Sensor *s, byte n = 0) {
       // RPM's are occasionaly screwed up because of IRQ latency.
       // Throw out highest and lowest and average the middle
       noInterrupts();
-      int r[N(rpm)];
+      short r[N(rpm)];
       memcpy(r, rpm, sizeof(rpm));
       interrupts();
       sort(r, N(r));
@@ -261,16 +264,16 @@ int readSensor(const Sensor *s, byte n = 0) {
 #endif
 }
 
-int scaleValue(const Sensor *s, int val) {
+short scaleValue(const Sensor *s, short val) {
   if (val == FAULT)
     return FAULT;
   return multiplyAndScale(s->vfactor,val+s->voffset, divisor);
 }
 
-byte alertState(Sensor *s, byte offset) {
+byte alertState(const Sensor *s, byte offset) {
  byte b = 0;
   if (s) {
-    int v = scaleValue(s, readSensor(s,offset));
+    short v = scaleValue(s, readSensor(s,offset));
     if (v == FAULT) 
       b = ALERT_FAULT;
     else {
@@ -288,7 +291,7 @@ byte alertState(Sensor *s, byte offset) {
 }
 
 inline bool isEngineRunning() {
-  return !(RUN_VOLT || RUN_OILP || RUN_TACH)
+  return !(bool(RUN_VOLT) || bool(RUN_OILP) || bool(RUN_TACH))
 #if RUN_VOLT
   || scaleValue(&voltS, readSensor(&voltS)) > RUN_VOLT
 #endif

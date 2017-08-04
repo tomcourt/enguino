@@ -19,6 +19,7 @@
 
 #include <SPI.h>            // required for ethernet2
 #include <Ethernet2.h>
+#include <EEPROM.h>         // required for persit.h
 #include <string.h>
 #include <avr/pgmspace.h>   // storing strings in Flash to save RAM
 

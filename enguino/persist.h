@@ -25,7 +25,6 @@
 
 
 
-#include <EEPROM.h>
 
 static byte nextFreeSlot;
 
@@ -34,10 +33,10 @@ static byte nextFreeSlot;
 // if the first half doesn't match the inverted second half than return false (no valid data)
 static bool eeRead(byte slot, void *buffer) {
   int address = slot << 4;   
-  byte *cp = buffer;
+  byte *cp = (byte *)buffer;
   for (byte i=8; i; i--)
     *cp++ = EEPROM.read(address++); 
-  cp = buffer;
+  cp = (byte *)buffer;
   for (byte i=8; i; i--)
     if (*cp++ != (EEPROM.read(address++) ^ 0xFF)) 
       return false;

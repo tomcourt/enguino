@@ -4,17 +4,17 @@
 // --------------------------
 //
 //  This file is part of Enguino.
-//  
+//
 //  Enguino is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-//  
+//
 //  Enguino is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//  
+//
 //  You should have received a copy of the GNU General Public License
 //  along with Enguino.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -24,13 +24,16 @@
 #define AUX_SWITCH   11
 
 // lookup port mapping to pins here: https://www.arduino.cc/en/Reference/PortManipulation
-#define SCL_PIN 0 
-#define SCL_PORT PORTD 
-#define SDA_PIN 1 
+#define SCL_PIN 0
+#define SCL_PORT PORTD
+#define SDA_PIN 1
 #define SDA_PORT PORTD
 #define I2C_SLOWMODE 1
-#define I2C_TIMEOUT 10 
+#define I2C_TIMEOUT 10
+
+#if __AVR__
 #include "softI2CMaster.h"
+#endif
 
 #define HT16K33_OSCILATOR_ON 0x21
 
@@ -52,9 +55,9 @@
 // +---  1 ---+
 // |          |
 // 20         2
-// |          |   
+// |          |
 // +--- 40 ---+
-// |          |   
+// |          |
 // 10         4
 // |          |
 // +---  8 ---+ *80
@@ -117,7 +120,7 @@ volatile byte switchDown;   // use this for detecting a key held down for a peri
 volatile byte switchUp;
 volatile byte switchPress;   // use this to detect a short keypress, then reset to 0
 
-static const byte addressDigit[] = { 1, 3, 7, 9 };    // skip the colon 
+static const byte addressDigit[] = { 1, 3, 7, 9 };    // skip the colon
 static const byte characterMap[] = { LED_0, LED_1, LED_2, LED_3, LED_4, LED_5, LED_6, LED_7, LED_8, LED_9 };
 
 static byte ledBuffer[17];   // first byte is 0 for the address, 2 is first digit, 4 the second, etc.
@@ -127,14 +130,14 @@ byte alertStatus;
 #define STATUS_CAUTION 0x5
 #define STATUS_NORMAL  0x1
 
-byte colon;  
+byte colon;
 #define LED_COLON 2
 
 void writeI2C(byte line, byte *buffer, byte len) {
   if (i2c_start((I2C_ADDRESS | (line<<1)) | I2C_WRITE)) {
     while (len--) {
-      if (!i2c_write(*buffer++)) 
-        break;   
+      if (!i2c_write(*buffer++))
+        break;
     }
   }
   i2c_stop();
@@ -146,7 +149,7 @@ void commandLED(byte line, byte command) {
 }
 
 void writeLED(byte line) {
-  writeI2C(line, ledBuffer, sizeof(ledBuffer));  
+  writeI2C(line, ledBuffer, sizeof(ledBuffer));
 }
 
 void printLEDRawDigits(byte offset, word val) {
@@ -155,16 +158,16 @@ void printLEDRawDigits(byte offset, word val) {
     val /= 10;
     if (val == 0)
       break;
-  } 
+  }
 }
 
 // Number is clipped at 999 and has a decimal point at 1.
 // Numbers greater than 99 are displayed whole, smaller in tenths
 void printLEDRawHalfDigits(byte offset, word number) {
-  if (number == FAULT) {
+  if (short(number) == FAULT) {
     ledBuffer[addressDigit[offset-1]] = LED__;
     ledBuffer[addressDigit[offset-2]] = LED__;
-  } 
+  }
   else {
     if (number < 0)
       number = 0;
@@ -176,7 +179,7 @@ void printLEDRawHalfDigits(byte offset, word number) {
     }
     else
       printLEDRawDigits(offset, number/10);
-  }  
+  }
 }
 
 void printStatus(byte line) {
@@ -184,7 +187,7 @@ void printStatus(byte line) {
   if (line == 0) {
     // 4/9 duty cycle for caution/alarm indicator  (22 ma max current, 13 ma typical)
     ledBuffer[6] = ledBuffer[14] = ((alertStatus == STATUS_CAUTION) ? STATUS_NORMAL : alertStatus);  // yellow = 2/4 green +
-    ledBuffer[2] = ledBuffer[10] = alertStatus;                                                      //          2/4 green + 2/4 red 
+    ledBuffer[2] = ledBuffer[10] = alertStatus;                                                      //          2/4 green + 2/4 red
   }
 }
 
@@ -195,22 +198,22 @@ void printLEDSetup() {
   pinMode(AUX_SWITCH, INPUT_PULLUP);
 
   i2c_init();
-  
-  for (byte line=0; line<2; line++) {   
+
+  for (byte line=0; line<2; line++) {
     commandLED(line, HT16K33_OSCILATOR_ON);
     commandLED(line, HT16K33_BLINK_OFF);
-    commandLED(line, HT16K33_BRIGHT_MAX);  
+    commandLED(line, HT16K33_BRIGHT_MAX);
   }
 }
 
 // print a text message to the LED on line 0 or 1
 void printLED(byte line, byte a, byte b, byte c, byte d) {
   printStatus(line);
-  ledBuffer[1] =  a;  
-  ledBuffer[3] =  b;  
+  ledBuffer[1] =  a;
+  ledBuffer[3] =  b;
   ledBuffer[5] =  colon; // turn colon off
-  ledBuffer[7] =  c;  
-  ledBuffer[9] = d;  
+  ledBuffer[7] =  c;
+  ledBuffer[9] = d;
   writeLED(line);
 }
 
@@ -220,20 +223,20 @@ void printLED(byte line, byte *txt) {
 }
 
 // print the fuel gauge (e.g. 2.5:17)  (left tank : right tank)
-void printLEDFuel(int left, int right) {
-  memset(ledBuffer, 0, sizeof(ledBuffer));  
+void printLEDFuel(short left, short right) {
+  memset(ledBuffer, 0, sizeof(ledBuffer));
   ledBuffer[1] = ledBuffer[7] = 0;
   printLEDRawHalfDigits(2, left);
   printLEDRawHalfDigits(4, right);
-  ledBuffer[5] = LED_COLON;    
-  writeLED(1);  
+  ledBuffer[5] = LED_COLON;
+  writeLED(1);
 }
 
 // print the 'number' to 'line' 0 or 1, place a decimal point 'decimal' digits to the left
-void printLED(byte line, int number, byte decimal) {
+void printLED(byte line, short number, byte decimal) {
   if (number == FAULT) {
     printLED(line, LED_TEXT(i,n,o,P));
-  } 
+  }
   else {
     if (number < 0)
       number = 0;
@@ -256,8 +259,8 @@ inline void pollAuxSwitch() {
     if (switchUp >  2) {    // debounce test, button must be up for more than 1/4 second before considered a button up state
       if (switchDown)
         switchPress = switchDown;
-      switchDown = 0; 
-    }  
+      switchDown = 0;
+    }
    }
   else {
     // switch is down
@@ -265,4 +268,3 @@ inline void pollAuxSwitch() {
     switchUp = 0;
   }
 }
-

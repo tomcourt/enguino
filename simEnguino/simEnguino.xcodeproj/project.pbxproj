@@ -1,0 +1,285 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		16B2C1361F327FE000411907 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 16B2C1351F327FE000411907 /* main.cpp */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		16B2C1301F327FE000411907 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		1663C9451F35248A00209B41 /* wiring.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = wiring.h; sourceTree = "<group>"; };
+		1663C9461F3524F300209B41 /* i2cLED.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = i2cLED.h; sourceTree = "<group>"; };
+		16B2C1321F327FE000411907 /* simEnguino */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = simEnguino; sourceTree = BUILT_PRODUCTS_DIR; };
+		16B2C1351F327FE000411907 /* main.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = "<group>"; };
+		16B2C13C1F329E4E00411907 /* sensors.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sensors.h; path = ../../enguino/sensors.h; sourceTree = "<group>"; };
+		16B2C13D1F329E4E00411907 /* egTypes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = egTypes.h; path = ../../enguino/egTypes.h; sourceTree = "<group>"; };
+		16B2C13E1F329E4E00411907 /* printAux.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = printAux.h; path = ../../enguino/printAux.h; sourceTree = "<group>"; };
+		16B2C13F1F329E4E00411907 /* utility.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = utility.h; path = ../../enguino/utility.h; sourceTree = "<group>"; };
+		16B2C1401F329E4E00411907 /* printEthernet.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = printEthernet.h; path = ../../enguino/printEthernet.h; sourceTree = "<group>"; };
+		16B2C1411F329E4E00411907 /* controlAux.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = controlAux.h; path = ../../enguino/controlAux.h; sourceTree = "<group>"; };
+		16B2C1421F329E4E00411907 /* persist.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = persist.h; path = ../../enguino/persist.h; sourceTree = "<group>"; };
+		16B2C1431F329E4E00411907 /* printGauges.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = printGauges.h; path = ../../enguino/printGauges.h; sourceTree = "<group>"; };
+		16B2C1441F329E4E00411907 /* printWeb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = printWeb.h; path = ../../enguino/printWeb.h; sourceTree = "<group>"; };
+		16B2C1451F329E4E00411907 /* tcTemp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = tcTemp.h; path = ../../enguino/tcTemp.h; sourceTree = "<group>"; };
+		16B2C1461F329E4E00411907 /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = config.h; path = ../../enguino/config.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		16B2C12F1F327FE000411907 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		16B2C1291F327FE000411907 = {
+			isa = PBXGroup;
+			children = (
+				16B2C1341F327FE000411907 /* simEnguino */,
+				16B2C1331F327FE000411907 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		16B2C1331F327FE000411907 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				16B2C1321F327FE000411907 /* simEnguino */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		16B2C1341F327FE000411907 /* simEnguino */ = {
+			isa = PBXGroup;
+			children = (
+				16B2C13C1F329E4E00411907 /* sensors.h */,
+				16B2C13D1F329E4E00411907 /* egTypes.h */,
+				16B2C13E1F329E4E00411907 /* printAux.h */,
+				16B2C13F1F329E4E00411907 /* utility.h */,
+				16B2C1401F329E4E00411907 /* printEthernet.h */,
+				16B2C1411F329E4E00411907 /* controlAux.h */,
+				16B2C1421F329E4E00411907 /* persist.h */,
+				16B2C1431F329E4E00411907 /* printGauges.h */,
+				16B2C1441F329E4E00411907 /* printWeb.h */,
+				16B2C1451F329E4E00411907 /* tcTemp.h */,
+				16B2C1461F329E4E00411907 /* config.h */,
+				16B2C1351F327FE000411907 /* main.cpp */,
+				1663C9461F3524F300209B41 /* i2cLED.h */,
+				1663C9451F35248A00209B41 /* wiring.h */,
+			);
+			path = simEnguino;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		16B2C1311F327FE000411907 /* simEnguino */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 16B2C1391F327FE000411907 /* Build configuration list for PBXNativeTarget "simEnguino" */;
+			buildPhases = (
+				16B2C12E1F327FE000411907 /* Sources */,
+				16B2C12F1F327FE000411907 /* Frameworks */,
+				16B2C1301F327FE000411907 /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = simEnguino;
+			productName = simEnguino;
+			productReference = 16B2C1321F327FE000411907 /* simEnguino */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		16B2C12A1F327FE000411907 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0830;
+				ORGANIZATIONNAME = "Thomas Court Software Development, LLC";
+				TargetAttributes = {
+					16B2C1311F327FE000411907 = {
+						CreatedOnToolsVersion = 8.3.2;
+						DevelopmentTeam = DPEPP5Y636;
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 16B2C12D1F327FE000411907 /* Build configuration list for PBXProject "simEnguino" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 16B2C1291F327FE000411907;
+			productRefGroup = 16B2C1331F327FE000411907 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				16B2C1311F327FE000411907 /* simEnguino */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		16B2C12E1F327FE000411907 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				16B2C1361F327FE000411907 /* main.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		16B2C1371F327FE000411907 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		16B2C1381F327FE000411907 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "-";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		16B2C13A1F327FE000411907 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = DPEPP5Y636;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		16B2C13B1F327FE000411907 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				DEVELOPMENT_TEAM = DPEPP5Y636;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		16B2C12D1F327FE000411907 /* Build configuration list for PBXProject "simEnguino" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				16B2C1371F327FE000411907 /* Debug */,
+				16B2C1381F327FE000411907 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		16B2C1391F327FE000411907 /* Build configuration list for PBXNativeTarget "simEnguino" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				16B2C13A1F327FE000411907 /* Debug */,
+				16B2C13B1F327FE000411907 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 16B2C12A1F327FE000411907 /* Project object */;
+}

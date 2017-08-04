@@ -4,17 +4,17 @@
 // ---------------------------------------
 //
 //  This file is part of Enguino.
-//  
+//
 //  Enguino is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
 //  the Free Software Foundation, either version 3 of the License, or
 //  (at your option) any later version.
-//  
+//
 //  Enguino is distributed in the hope that it will be useful,
 //  but WITHOUT ANY WARRANTY; without even the implied warranty of
 //  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 //  GNU General Public License for more details.
-//  
+//
 //  You should have received a copy of the GNU General Public License
 //  along with Enguino.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -26,8 +26,8 @@ void printHomePage() {
   "<html>\n"
     "<head>\n"
       "<title>Enguino</title>\n"
-      "<meta name='apple-mobile-web-app-capable' content='yes'>\n"      
-      "<meta name='mobile-web-app-capable' content='yes'>\n"      
+      "<meta name='apple-mobile-web-app-capable' content='yes'>\n"
+      "<meta name='mobile-web-app-capable' content='yes'>\n"
       "<style>\n"
         ".segment { stroke:gray; stroke-width:20; }\n"
         ".rectgauge  {  fill:none; stroke:black; stroke-width:40; }\n"
@@ -85,13 +85,13 @@ void printHomePage() {
   // "document.getElementById('over').style.display='';\n"
   // and add "document.getElementById('over').style.display='none';\n" when dynamic content is loaded
   // and add the following to style and html respectively
-  // ".overc { background-color:black; opacity:0.8; z-index:20; height:100%; width:100%; background-repeat:no-repeat; background-position:center; position:absolute; top:0px; left:0px; transition:2.0s }\n"        
+  // ".overc { background-color:black; opacity:0.8; z-index:20; height:100%; width:100%; background-repeat:no-repeat; background-position:center; position:absolute; top:0px; left:0px; transition:2.0s }\n"
   // "<div id='over' class='overc'></div>\n"
 }
 
 
 void printSetupPage() {
-  print_P(F(   
+  print_P(F(
     "<!DOCTYPE html>\n"
     "<html>\n"
       "<style>\n"
@@ -127,7 +127,7 @@ void printSetupPage() {
 
 
 void serveUpWebPage(char url, char var, word num) {
-  switch(url) {  
+  switch(url) {
     case '?':     // lean/cancel/ button pressed or return from setup
       switch (var) {
         case 'l':     // lean mode
@@ -146,7 +146,7 @@ void serveUpWebPage(char url, char var, word num) {
             num -= 10000;
             (ee_status.hobbs1k)++;
           }
-          ee_status.hobbs = num<<2; 
+          ee_status.hobbs = num<<2;
 eeStatus:
           eeUpdateStatus();
           break;
@@ -166,8 +166,8 @@ eeSettings:
     case 's':      // setup page
      printSetupPage();
      break;
-   case 'd':     // dynamic webpage   
-      for (int i=0; i<N(gauges); i++)
+   case 'd':     // dynamic webpage
+      for (byte i=0; i<N(gauges); i++)
         printGauge(gauges+i);
       break;
   }
@@ -181,7 +181,7 @@ void pollForHttpRequest() {
     // an http request ends with a blank line
     char lastToken = 0;
     const char *request = "GET /?x= &n=";
-    char *state = request;
+    const char *state = request;
     char url = 0;
     char var = 0;
     word num = 0;
@@ -190,7 +190,7 @@ void pollForHttpRequest() {
         char token = client.read();
         if (token == '\r')
           continue;               // ignore '/r'
-        // Serial.print(token);          
+        // Serial.print(token);
         // two newlines in a row is the end of the request
         if (token == '\n' && lastToken == '\n') {
           // send a standard http response header
@@ -201,11 +201,11 @@ void pollForHttpRequest() {
             "\n"
           ));
           serveUpWebPage(url, var, num);
-          flush();   
+          flush();
           break;
         }
         lastToken = token;
-        
+
         if (state) {
           switch (*state) {
             case '\0':
@@ -220,7 +220,7 @@ void pollForHttpRequest() {
             case ' ':
               var = token;
               state++;          // advance state (falling thru would complete request which we don't want to do)
-              continue;           
+              continue;
           }
           if (token == *state)
             state++;            // advance state
@@ -237,5 +237,3 @@ void pollForHttpRequest() {
     client.stop();
   }
 }
-
-
