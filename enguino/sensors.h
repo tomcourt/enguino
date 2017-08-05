@@ -270,7 +270,7 @@ short scaleValue(const Sensor *s, short val) {
   return multiplyAndScale(s->vfactor,val+s->voffset, divisor);
 }
 
-byte alertState(const Sensor *s, byte offset) {
+byte alertStateNow(const Sensor *s, byte offset) {
  byte b = 0;
   if (s) {
     short v = scaleValue(s, readSensor(s,offset));

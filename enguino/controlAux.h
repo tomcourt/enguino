@@ -25,6 +25,12 @@ bool dimAux;
 bool didHoldKey;
 bool didChangeDim;
 
+void changePage(byte page) {
+  if (page != auxPage) {
+    blinkAux[0] = blinkAux[1] = 0;
+    auxPage = page;
+  }
+}
 
 
 void updateAlerts() {
@@ -32,9 +38,9 @@ void updateAlerts() {
     AuxDisplay *a = auxDisplay + i;
     for (byte j=0; j<2; j++) {
       const Sensor *s = a->sensor[j];
-      byte b = alertState(s, 0);
+      byte b = alertStateNow(s, 0);
       if (s->pin & DUAL_BIT)
-        b |= alertState(s, 1);
+        b |= alertStateNow(s, 1);
       a->alertState[j] = b;
     }
   }
@@ -44,16 +50,16 @@ void checkForAlerts(bool warning) {
   // work backward to higher priority alerts
   for (byte i=N(auxDisplay)-1; i>=AUX_STARTUP_PAGES; i--) {
     AuxDisplay *a = auxDisplay + i;
-    bool isInfoPage = a->sensor[0] != a->sensor[1];
+    bool isInfoPage = (a->sensor[0] != a->sensor[1]);
     if (warning) {
       bool b = (a->alertState[1] & WARNING_ANY);
       if (isInfoPage)
-        b = b || (a->alertState[0] & WARNING_ANY);
+        b = (b || (a->alertState[0] & WARNING_ANY));
       if (b) {
         alertStatus = STATUS_WARNING;
         if (a->warning != -1) {
           a->warning = 1;
-          auxPage = i;
+          changePage(i);
          }
       }
     }
@@ -62,7 +68,7 @@ void checkForAlerts(bool warning) {
         alertStatus = STATUS_CAUTION;
         if (a->caution != -1) {
           a->caution = 1;
-          auxPage = i;
+          changePage(i);
         }
       }
     }
@@ -74,12 +80,13 @@ void checkForAlerts(bool warning) {
 void showAuxPage() {
   AuxDisplay *a = auxDisplay + auxPage;
   for (byte n=0; n<2; n++) {
+    bool isInfoPage = (a->sensor[0] != a->sensor[1]);
     if (a->alertState[n] & WARNING_ANY) {
       alertStatus = STATUS_WARNING;
-      if (blinkAux[n] == 0)
+      if (blinkAux[n] == 0 && (isInfoPage || n==0))
          blinkAux[n] = 1;
     }
-    else
+    else if (blinkAux[n] != -1)
       blinkAux[n] = 0;
     commandLED(n, (blinkAux[n] == 1) ? HT16K33_BLINK_1HZ : HT16K33_BLINK_OFF);
 
@@ -87,16 +94,16 @@ void showAuxPage() {
     if (n==0 && a->literal[0]) {
       byte t[4];
       memcpy(t,a->literal,4);
-      if (a->alertState[n])
-        t[3] = (a->alertState[1] & (WARNING_LOW | CAUTION_LOW)) ? LED_L : LED_H;
-      printLED(n,t);
+      if (a->alertState[0] & (WARNING_ANY|CAUTION_ANY))
+        t[3] = ((a->alertState[0] & (WARNING_LOW | CAUTION_LOW)) ? LED_L : LED_H);
+      printLED(0,t);
     }
     else if (s->pin & DUAL_BIT)
       printLEDFuel(scaleValue(s, readSensor(s,0)), scaleValue(s, readSensor(s,1)));    // Show the dual fuel gauge
     else if (s) {
-	  short v = scaleValue(s, readSensor(s));
+	    short v = scaleValue(s, readSensor(s));
       printLED(n,v, s->decimal);
-	}
+	  }
   }
 }
 
@@ -136,13 +143,10 @@ inline void buttonPress() {
     ackAlert();
   }
   else {
-    if (ackAlert())
-      auxPage = AUX_STARTUP_PAGES;
-    else {
-      auxPage++;
-      if (auxPage >= N(auxDisplay))
-        auxPage = AUX_STARTUP_PAGES;
-    }
+    if (ackAlert() || auxPage >= N(auxDisplay)-1)
+      changePage(AUX_STARTUP_PAGES);
+    else 
+      changePage(auxPage+1);
   }
 }
 
@@ -151,7 +155,7 @@ inline void buttonHold() {
   blinkAux[0] = blinkAux[1] = 0;
   for (byte i=AUX_STARTUP_PAGES; i<N(auxDisplay); i++)
     auxDisplay[i].warning = auxDisplay[i].caution = 0;
-  auxPage = AUX_STARTUP_PAGES;
+  changePage(AUX_STARTUP_PAGES);
   didHoldKey = true;
 }
 
@@ -180,6 +184,6 @@ inline void checkAuxSwitch() {
 
   if (switchUp > SHOW_DEFAULT_AUX_PAGE_TIMEOUT*8) {
     if (auxDisplay[auxPage].warning <=0 && auxDisplay[auxPage].caution <= 0)
-      auxPage = AUX_STARTUP_PAGES;
+      changePage(AUX_STARTUP_PAGES);
   }
 }

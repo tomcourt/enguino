@@ -37,7 +37,7 @@ short scaleMark(const Sensor *s, short val) {
 
 void printGaugeRawValue(short x, short y, const Sensor *s, short val, byte pinOffset) {
   print_g_translate(x, y);
-  byte alert = alertState(s, pinOffset);
+  byte alert = alertStateNow(s, pinOffset);
   if (alert) {
     print_P(F("'<rect width='1000' height='500' rx='90' ry='90' fill='"));
     if (alert & WARNING_ANY)

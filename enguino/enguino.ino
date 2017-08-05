@@ -33,7 +33,7 @@ EthernetServer server(80);    // Port 80 is HTTP
 EthernetClient client;
 
 // #define DEBUG              // checks RAM usage
-#define SIMULATE_SENSORS 3    // number of simulated sensor 'states', press enter in serial monitor to advace state
+// #define SIMULATE_SENSORS 3    // number of simulated sensor 'states', press enter in serial monitor to advace state
 // #define BOUNDING_BOX       // shows a box around each instrumment and around the viewable area of the page. Use to help arrange gauges.
 
 // sketches don't like typdef's so they are in in this header file instead
@@ -88,7 +88,11 @@ void setup() {
   
   tcTempSetup();
 
-  delay(1); // delay to allow LED display chip to startup
+  // init ADC values for battery voltage
+  for(byte i=0; i<4; i++)
+    updateADC();        
+
+  // 1ms needed to delay to allow LED display chip to startup
   printLEDSetup();
   
   for (auxPage=0; auxPage<AUX_STARTUP_PAGES; auxPage++) {
