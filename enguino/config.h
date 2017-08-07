@@ -72,43 +72,43 @@ const Sensor hobbsS = { st_unit,   HOBBS_SENSOR, 1,       0,       SCALE(1.),   
 
 // Label and gradations
 // --------------------
-string    oilpLV[] =  {     "80",            "60",           "40",           "20"  };
+string      oilpLV[] =  {     "80",            "60",           "40",           "20"  };
 const short oilpLP[] =  { VSEG(80./100.),  VSEG(60./100.), VSEG(40./100.), VSEG(20./100.) };
-string    oiltLV[] =  {     "200",           "150",          "100" };
+string      oiltLV[] =  {     "200",           "150",          "100" };
 const short oiltLP[] =  { VSEG(150./200.), VSEG(100./200.), VSEG(50./200.) };     // offset and range offset by 50 deg-F
-string    voltLV[] =  {    "14",        "12"  };
+string      voltLV[] =  {    "14",        "12"  };
 const short voltLP[] =  { VSEG(4./6.), VSEG(2./6.) };                             // offset and range offset by 10 volts
-string   fuelpLV[] =   {     "8",           "6",          "4",          "2" };
+string      fuelpLV[] =   {     "8",           "6",          "4",          "2" };
 const short fuelpLP[] =  { VSEG(8./10.),  VSEG(6./10.), VSEG(4./10.), VSEG(2./10.) };
-string    fuellLV[] =  {     "15",          "10",          "5",          "2.5" };
+string      fuellLV[] =  {     "15",          "10",          "5",          "2.5" };
 const short fuellLP[] =  { VSEG(15./16.), VSEG(10./16.), VSEG(5./16.), VSEG(2.5/16.) };
-string    chtLV[] =  {     "200&deg;F",     "300&deg;F",     "400&deg;F" };
+string      chtLV[] =  {     "200&deg;F",     "300&deg;F",     "400&deg;F" };
 const short chtLP[] =  { HSEG(100./400.), HSEG(200./400.), HSEG(300./400.) };    // offset and range offset by 100 deg-F
-string    egtLV[] =  {    "1150&deg;",     "1300&deg;",     "1450&deg;" };
+string      egtLV[] =  {    "1150&deg;",     "1300&deg;",     "1450&deg;" };
 const short egtLP[] =  { HSEG(150./600.), HSEG(300./600.), HSEG(450./600.) };    // offset and range offset by 1000 deg-F
 
 // Color regions
 // -------------
 string oilpRC[] = { red,            yellow,         green,          red     };
-short    oilpRP[] = { VSEG(25./100.), VSEG(55./100.), VSEG(95./100.), VSEG(1) };
+short  oilpRP[] = { VSEG(25./100.), VSEG(55./100.), VSEG(95./100.), VSEG(1) };
 string oiltRC[] = { yellow,         green,           red     };
-short    oiltRP[] = { VSEG(40./200.), VSEG(196./200.), VSEG(1) };     // offset and range offset by 50 deg-F
+short  oiltRP[] = { VSEG(40./200.), VSEG(196./200.), VSEG(1) };     // offset and range offset by 50 deg-F
 string voltRC[] = { red,         yellow,      green,       yellow,       red     };
-short    voltRP[] = { VSEG(1./6.), VSEG(3./6.), VSEG(5./6.), VSEG(5.9/6.), VSEG(1) };      // offset and range offset by 10 volts
+short  voltRP[] = { VSEG(1./6.), VSEG(3./6.), VSEG(5./6.), VSEG(5.9/6.), VSEG(1) };      // offset and range offset by 10 volts
 string fuelpRC[] = { red,          yellow,       green,        yellow,       red     };
-short    fuelpRP[] = { VSEG(.5/10.), VSEG(2./10.), VSEG(6./10.), VSEG(8./10.), VSEG(1) };
+short  fuelpRP[] = { VSEG(.5/10.), VSEG(2./10.), VSEG(6./10.), VSEG(8./10.), VSEG(1) };
 string fuellRC[] = { red,           yellow,       green   };
-short    fuellRP[] = { VSEG(2.5/16.), VSEG(5./16.), VSEG(1) };
+short  fuellRP[] = { VSEG(2.5/16.), VSEG(5./16.), VSEG(1) };
 string tachRC[] = { yellow,              green,                red       };
-short    tachRP[] = { ARCX(500./3000.),    ARCX(2700./3000.),    ARCX(1),       // x
+short  tachRP[] = { ARCX(500./3000.),    ARCX(2700./3000.),    ARCX(1),       // x
                     ARCY(500./3000.),    ARCY(2700./3000.),    ARCY(1),       // y
                     0,                   0,                    0         };   // arc segmenet is > 180 degrees
 string mapRC[] = { green    };
-short    mapRP[] = { ARCX(1),        // x
+short  mapRP[] = { ARCX(1),        // x
                    ARCY(1),        // y
                    1      };       // arc segmenet is > 180 degrees
 string chtRC[] = { yellow,         green,           yellow,          red     };
-short    chtRP[] = { HSEG(50./400.), HSEG(300./400.), HSEG(395./400.), HSEG(1) };     // offset and range offset by 100 deg-F
+short  chtRP[] = { HSEG(50./400.), HSEG(300./400.), HSEG(395./400.), HSEG(1) };     // offset and range offset by 100 deg-F
 
 // Gauge layout for screen
 // -----------------------

@@ -153,11 +153,11 @@ void tachIRQ() {
   static byte rpmInx;
   static unsigned long lastTachTime;
 
-  unsigned long newTachTime = micros();
-  rpm[rpmInx++ & 7] = (60000000L/TACH_DIVIDER) / (newTachTime - lastTachTime);
-  lastTachTime = newTachTime;
-  tachDidPulse = true;
-}
+  unsigned long newTachTime = micros();                     // micros has a resolution of 4 uS. 
+  rpm[rpmInx++ & 7] = (60000000L/TACH_DIVIDER) / (newTachTime - lastTachTime);  // TBD!!! - long divide in IRQ, ick 
+  lastTachTime = newTachTime;                               // record and average intervals/4, change to RPM when read
+  tachDidPulse = true;                                      // With Tach divide of 2  @ 250 RPM, Interval is 30000 4uS
+}                                                           // Lower RPM or lower tach divider will need to skip every n tach IRQs.
 
 void fflowIRQ() {
   fflowCount++;
