@@ -65,7 +65,7 @@ int kbhit(void) {
 
 
 
-
+#define CALIBRATION_TEST	  // show calibration values instead of fuel flow/lean info panel
 #define SIMULATE_SENSORS 3    // number of simulated sensor 'states', press enter in serial monitor to advace state
 // #define BOUNDING_BOX       // shows a box around each instrumment and around the viewable area of the page. Use to help arrange gauges.
 

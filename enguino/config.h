@@ -4,7 +4,7 @@
 // ------------------------------
 // This configuration file assumes Carburated Lycoming O-360 or O-320 with Van's Aircraft sensors. Fuel level senders are Van's for the RV-6.
 // Confirm the yellow and red line (cauation and warning) numbers are correct for your engine. Confirm that your sensors are compatible.
-// And most importanly confirm that your fuel gauges are correctly reflect fuel in the tank from full to empty.
+// And most importanly confirm that your fuel gauges correctly reflect fuel in the tank from all readings from full to empty.
 
 //  This file is part of Enguino.
 //
@@ -25,14 +25,19 @@
 
 #define TACH_DIVIDER 4
 
-#define CYLINDERS 4     // used for how may horizontal gauges are drawn
+#define CYLINDERS 4     // used for how may horizontal gauges are drawn for CHT/EGT
 
 #define DEFAULT_K_FACTOR (68000L / 40)  // for fuel flow transducer
 
 // Exceed any of these and engine will be considered 'running'. Hobbs time will accumulate and engine alerts will appear. A 0 value will cause that sensor to be ignored.
 #define RUN_VOLT 130
-#define RUN_OILP 30
+#define RUN_OILP 250
 #define RUN_TACH 200
+
+// By default each analog sensor is averaged 4 times over a half a second period
+// Because the fuel tank level 'sloshes' with a period of several seconds a longer average is needed
+#define LONG_AVERAGE_LENGTH 64   // long average period in eigths of a second, every 8 seconds the reading will be half again as close to accurate, i.e. in a minute it will be within 1% 
+const bool longAverageByPin[12] = { false, false, false, false, true, true, false, false, false, false, false, false };
 
 // Sensor defintions and scaling
 // -----------------------------
@@ -48,7 +53,7 @@
 // st_r240to33     0 - 1000   proportional on resistance of sensor forming resistor divider
 // st_v240to33     0 - 1000   proportional on voltage of sensor forming resistor divider
 // st_thermistorC  0 - 1500   degrees C. in tenths
-// st_thermistorF 32 - 2732   degrees F. in tenths
+// st_thermistorF 320- 2732   degrees F. in tenths
 // st_volts        0 - 1000   5 mV/per count
 // st_k_type_tcC   0 - 4000   0-1000 degrees C. in quarters
 // st_j_type_tcC   0 - 4000   0-1000 degrees C. in quarters
@@ -57,9 +62,9 @@
 // st_unit                    unit values, RPM, fuel flow, hobbs
 
 //                      sensor-type,  pin, decimal, voffset,         vfactor,            goffset,          gfactor,lowWarning,lowCaution,highCaution,highWarning
+const Sensor voltS =  { st_volts,       0,       1,       0,     SCALE(.200),    GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
 const Sensor oilpS =  { st_v240to33,    1,       0,       0,     SCALE(.100),                  0,        SCALE(1.),        25,       55,      9999,        95 };
 const Sensor oiltS =  { st_thermistorF, 2,       0,       0,     SCALE(.100),        GMIN(50*10),      GRNG(200*10),       -1,      140,      9999,       250 };
-const Sensor voltS =  { st_volts,       0,       1,       0,     SCALE(.200),    GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
 const Sensor fuelpS = { st_v240to33,    3,       1,       0,     SCALE(.150),                  0,  SCALE(150./100.),        5,       20,        60,        80 };
 const Sensor fuellS = { st_v240to33,  DUAL(4),   1,       0,     SCALE(.160),                  0,         SCALE(1.),       25,       50,      9999,       999 };
 const Sensor tachS =  { st_unit,    TACH_SENSOR, 0,       0,       SCALE(1.),            GMIN(0),        GRNG(3000),       -1,      500,      9999,      2700 };
@@ -112,19 +117,23 @@ short  chtRP[] = { HSEG(50./400.), HSEG(300./400.), HSEG(395./400.), HSEG(1) }; 
 
 // Gauge layout for screen
 // -----------------------
-#define bank 3500   // bank of misc vertical gauges
+// bank values are to easily adjust the row of vertical gauges
+#define BANKX 3500    // bank of misc vertical gauges, starting X position
+#define BANKDX 1750   // distance between each vertical gauage
+#define bank(x) (BANKX+(x)*BANKDX)    // x position for each gauge in the 'bank' of vertical gauges
+
 const Gauge gauges[] = {
-  //  x,      y,  style,     label1, label2, units,    labVal,   labPt,        num,  regClr,   regPt,        num,  sensor
-  {bank+0,    0,  gs_vert,   "OIL",  "PRES", "psi",    oilpLV,  oilpLP,  N(oilpLV),  oilpRC,  oilpRP,  N(oilpRC),  &oilpS},
-  {bank+1750, 0,  gs_vert,   "OIL",  "TEMP", "&deg;F", oiltLV,  oiltLP,  N(oiltLV),  oiltRC,  oiltRP,  N(oiltRC),  &oiltS},
-  {bank+3500, 0,  gs_vert,   "",     "VOLT", "volt",   voltLV,  voltLP,  N(voltLV),  voltRC,  voltRP,  N(voltRC),  &voltS},
-  {bank+5250, 0,  gs_vert,   "FUEL", "PRES", "psi",    fuelpLV, fuelpLP, N(fuelpLV), fuelpRC, fuelpRP, N(fuelpRC), &fuelpS},
-  {bank+7000, 0,  gs_pair,   "FUEL", "",     "gal",    fuellLV, fuellLP, N(fuellLV), fuellRC, fuellRP, N(fuellRC), &fuellS},
-  {100,       0,  gs_round,  "TACH", "",     "rpm",    0,       0,       0,          tachRC,  tachRP,  N(tachRC),  &tachS},
-  {100,    3200,  gs_round,  "MP",   "",     "in-hg",  0,       0,       0,          mapRC,   mapRP,   N(mapRC),   &mapS},
-  {2950,    6150, gs_horiz,  "CHT",  "",     "",       chtLV,   chtLP,   N(chtLV),   chtRC,   chtRP,   N(chtRC),   &chtS},
-  {2950,    6150, gs_egt,    "EGT",  "",     "",       egtLV,   egtLP,   N(egtLV),   0,       0,       0,          &egtS},
-  {800,     6650, gs_infobox,"",     "",     "",       0,       0,       0,          0,       0,       0,          0}
+  //  x,    y,  style,     label1, label2, units,    labVal,   labPt,        num,  regClr,   regPt,        num,  sensor
+  {bank(0), 0,  gs_vert,   "OIL",  "PRES", "psi",    oilpLV,  oilpLP,  N(oilpLV),  oilpRC,  oilpRP,  N(oilpRC),  &oilpS},
+  {bank(1), 0,  gs_vert,   "OIL",  "TEMP", "&deg;F", oiltLV,  oiltLP,  N(oiltLV),  oiltRC,  oiltRP,  N(oiltRC),  &oiltS},
+  {bank(2), 0,  gs_vert,   "",     "VOLT", "volt",   voltLV,  voltLP,  N(voltLV),  voltRC,  voltRP,  N(voltRC),  &voltS},
+  {bank(3), 0,  gs_vert,   "FUEL", "PRES", "psi",    fuelpLV, fuelpLP, N(fuelpLV), fuelpRC, fuelpRP, N(fuelpRC), &fuelpS},
+  {bank(4), 0,  gs_pair,   "FUEL", "",     "gal",    fuellLV, fuellLP, N(fuellLV), fuellRC, fuellRP, N(fuellRC), &fuellS},
+  {100,     0,  gs_round,  "TACH", "",     "rpm",    0,       0,       0,          tachRC,  tachRP,  N(tachRC),  &tachS},
+  {100,  3200,  gs_round,  "MP",   "",     "in-hg",  0,       0,       0,          mapRC,   mapRP,   N(mapRC),   &mapS},
+  {2950, 6150, gs_horiz,   "CHT",  "",     "",       chtLV,   chtLP,   N(chtLV),   chtRC,   chtRP,   N(chtRC),   &chtS},
+  {2950, 6150, gs_egt,     "EGT",  "",     "",       egtLV,   egtLP,   N(egtLV),   0,       0,       0,          &egtS},
+  {800,  6650, gs_infobox, "",     "",     "",       0,       0,       0,          0,       0,       0,          0}
 };
 
 // Guage layout for aux display

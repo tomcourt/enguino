@@ -32,8 +32,9 @@
 
 volatile short tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal reference temp, disable IRQ's to access these
 
-volatile bool eighthSecondTick;
-volatile byte eighthSecondCount = 0;
+volatile bool eighthSecond;
+volatile byte halfSecond = 0;
+volatile byte wholeSecond = 0;
 
 short readSPI() {
   word v = 0;
@@ -112,11 +113,12 @@ SIGNAL(TIMER0_COMPA_vect)
     }
     ms = 255; // ++ will make this 0
 
-    eighthSecondCount++;
-    if ((eighthSecondCount&3) == 0) // every half second
-      updateFuelFlow();
+    eighthSecond = true;
+    halfSecond++;
+    wholeSecond++;
 
-    eighthSecondTick = true;
+    if (halfSecond == 4) // every half second
+      updateFuelFlow();
   }
   ms++;
 }

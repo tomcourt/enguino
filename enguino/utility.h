@@ -54,7 +54,7 @@ void logText(const char *text = "") {
   Serial.println(text);
 }
 
-#if DEBUG && __AVR__
+#if DEBUG_RAM_USE 
 volatile short minFreeRam = 10000;
 
 void checkFreeRam() {

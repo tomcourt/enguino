@@ -26,6 +26,8 @@
 
 #define FAULT short(-32768)
 
+#define UNUSED_PIN  31
+
 typedef const char * string;
 
 // for persist.h
@@ -59,8 +61,8 @@ enum SensorType {st_r240to33, st_v240to33, st_thermistorF, st_thermistorC, st_vo
 
 typedef struct {
   SensorType type;
-  signed char pin;
-  byte decimal;   // add decimal point 'decimal' positons from the right (0 is integer)
+  byte pin;
+  byte decimal;     // add decimal point 'decimal' positons from the right (0 is integer)
   short voffset;    // used to display reading, int_reading has 'decimal' point shifted right
   short vfactor;    // int_reading = multiply * sensor >> divisor + offset
   short goffset;    // used to calculate gauge marker position
@@ -121,7 +123,7 @@ typedef struct {
 // definitions to support config.h
 // -------------------------------
 #define DUAL_BIT 64
-#define DUAL(x)   (DUAL_BIT | (x))
+#define DUAL(x)   (DUAL_BIT | (x))      // dual gauge (left and right), e.g. fuel gauge
 
 // for a round gauge, calculate the x,y location for a gauge at fraction x of the full 240 degree arc
 #define ARCX(x) short(.5-(13000 * COS2(((x)*4./3.-1./6.) * PI)))

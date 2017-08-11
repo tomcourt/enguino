@@ -316,11 +316,47 @@ void printRound(const Gauge *g) {
 }
 
 
+#ifdef CALIBRATION_TEST
+
+// always 5 characters long right justifed, unless n < -9999 then 6 characters long
+void printFixed(int n){
+  if (n > -1000 && n < 10000)
+    print("&#8199;");
+  if (n > -100 && n < 1000)
+    print("&#8199;");
+  if (n > -10 && n < 100)
+    print("&#8199;");
+  if (n > -1 && n < 10)
+    print("&#8199;");
+  print(n);
+}
+
+#endif
+
+
 void printInfoBox() {
 #ifdef BOUNDING_BOX
   print_P(F("<rect x='0' y='0' width='1600' height='2800' fill='none' stroke='orange'/>\n"));
 #endif
-
+#ifdef CALIBRATION_TEST
+  print_P(F("<text x='0' y='0' text-anchor='start' font-size='250px'>_____RV____R___5V</text>"));
+  for (byte i=1; i<6; i++) {
+	print_P(F("<text x='0' y='"));
+	print(i*275);
+	print_P(F("' text-anchor='start' font-size='250px'>"));
+    Sensor s;
+    s.pin = i;
+    print(i);
+    print("-");
+    s.type = st_v240to33;
+    printFixed(readSensor((const Sensor *)&s));
+    s.type = st_r240to33;
+    printFixed(readSensor((const Sensor *)&s));
+    s.type = st_volts;
+    printFixed(readSensor((const Sensor *)&s));
+	print_text_close();
+  }
+#else
   print_P(F("<g width='1600' height='600' onClick=\"javascript:"));
   if (engineRunning)
     print_P(F("ajax('?x=l');\">\n"));
@@ -349,6 +385,7 @@ void printInfoBox() {
     print(ee_status.hobbs1k);
   print(ee_status.hobbs >> 2, 1);
   print_text_close();
+#endif
 }
 
 

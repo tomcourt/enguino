@@ -32,9 +32,10 @@ byte mac[] = {  0xDE, 0x15, 0x24, 0x33, 0x42, 0x51 };
 EthernetServer server(80);    // Port 80 is HTTP
 EthernetClient client;
 
-// #define DEBUG              // checks RAM usage
+// #define DEBUG_RAM_USE         // checks maximum RAM usage
+// #define CALIBRATION_TEST      // show calibration values instead of fuel flow/lean info panel
 // #define SIMULATE_SENSORS 3    // number of simulated sensor 'states', press enter in serial monitor to advace state
-// #define BOUNDING_BOX       // shows a box around each instrumment and around the viewable area of the page. Use to help arrange gauges.
+// #define BOUNDING_BOX          // shows a box around each instrumment and around the viewable area of the page. Use to help arrange gauges.
 
 // sketches don't like typdef's so they are in in this header file instead
 #include "egTypes.h"
@@ -114,21 +115,23 @@ void loop() {
 #endif
 
   pollForHttpRequest();
-  
-  if (eighthSecondTick) {    
-    eighthSecondTick = false;
+   
+  if (eighthSecond) {    
+    eighthSecond = false;
     
     updateADC();
 
     checkAuxSwitch();
-  
-    if (eighthSecondCount == 4 || eighthSecondCount >= 8) {      
-      // every half second
-      // -----------------
-      updateTach();           
+
+    // every half second
+    // -----------------
+    if (halfSecond >= 4) {  
+      halfSecond -= 4;
+    
+      updateRPM();
       engineRunning = isEngineRunning();
 
-     if (engineRunning) {
+      if (engineRunning) {
         alertStatus = STATUS_NORMAL;
         updateAlerts();
         checkForAlerts(false); 
@@ -141,8 +144,10 @@ void loop() {
 
       // every second
       // ------------
-      if (eighthSecondCount >= 8) { 
-#if DEBUG
+      if (wholeSecond >= 8) { 
+        wholeSecond -= 8;
+
+#if DEBUG_RAM_USE
         logValue(minFreeRam,"minFreeRam");
 #endif
         if (engineRunning)
@@ -152,7 +157,6 @@ void loop() {
           eeUpdateStatus();
           eeUpdateDirty = false;
         }  
-        eighthSecondCount -= 8;
       }
     }
   }

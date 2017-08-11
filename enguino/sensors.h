@@ -21,18 +21,25 @@
 #define FUELF_SIGNAL 1 
 #define TACH_SIGNAL  0
 
-#define RVoff           -495                    // 495 ADC units is when ADC when gauge reads 0, using a 240-33 ohm sensor and a 240 ohm divider
+#define RVoff           -512                    // 512 ADC units is when ADC when gauge reads 0, using a 240-33 ohm sensor and a 240 ohm divider
 #define RVscale         (1000.0/(124+RVoff))    // 124 ADC units is when ADC when gauge reads max, using same
 
 #define HOBBS_COUNT_INTERVAL (3600/40)    // update hobbs 40 times an hour
 
 extern volatile short tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal reference temp, disable IRQ's to access these
 
-short adcSample[12][4];
+typedef union {
+  long accumulate;
+  short moving[4];
+} Sample;
+
+Sample adcSample[13];   // adcSample[12] is tachometer
 byte adcIndex;
 
-volatile bool tachDidPulse;
-volatile short rpm[8];
+volatile short tachCount;
+volatile unsigned long latestTach_uS;
+unsigned long savedTach_uS;
+short rpm10;
 
 volatile word fflowCount;
 volatile word fflowRunning;
@@ -129,15 +136,6 @@ inline void updateFuelFlow() {
   ffRunning[ffRunningInx] = fflowRunning;
 }
 
-inline void updateTach() {
-  noInterrupts();
-  if (tachDidPulse)
-    tachDidPulse = false;
-  else
-    memset((void *)rpm, 0, sizeof(rpm));
-  interrupts();
-}
-
 inline void updateHobbs() {
   if (--hobbsCount == 0) {
     if (++(ee_status.hobbs) > 39999) {
@@ -149,15 +147,23 @@ inline void updateHobbs() {
   }
 }
 
-void tachIRQ() {
-  static byte rpmInx;
-  static unsigned long lastTachTime;
+inline void updateRPM() {
+  noInterrupts();
+  if (tachCount) {
+    unsigned long interval = latestTach_uS-savedTach_uS;
+    rpm10 = ((60*1000000L/TACH_DIVIDER/10)*tachCount + interval/2) / interval;
+  }
+  else
+    rpm10 = 0;
+  savedTach_uS = latestTach_uS;
+  tachCount = 0;
+  interrupts();
+}
 
-  unsigned long newTachTime = micros();                     // micros has a resolution of 4 uS. 
-  rpm[rpmInx++ & 7] = (60000000L/TACH_DIVIDER) / (newTachTime - lastTachTime);  // TBD!!! - long divide in IRQ, ick 
-  lastTachTime = newTachTime;                               // record and average intervals/4, change to RPM when read
-  tachDidPulse = true;                                      // With Tach divide of 2  @ 250 RPM, Interval is 30000 4uS
-}                                                           // Lower RPM or lower tach divider will need to skip every n tach IRQs.
+void tachIRQ() {
+  latestTach_uS = micros();                     // micros has a resolution of 4 uS. 
+  tachCount++;
+}                                                       
 
 void fflowIRQ() {
   fflowCount++;
@@ -173,17 +179,31 @@ void fflowIRQ() {
 
 // takes about 1.2 mS
 void updateADC() {
-  for (byte i=0; i<12; i++)
-    adcSample[i][adcIndex] = analogRead(i);
+  static bool initialized;
+  
+  for (byte i=0; i<13; i++) {
+    short ar = ((i==12) ? rpm10 : analogRead(i));
+    if (!longAverageByPin[i])
+      adcSample[i].moving[adcIndex] = ar; 
+    else {
+      if (initialized) {
+        adcSample[i].accumulate -= adcSample[i].accumulate/LONG_AVERAGE_LENGTH;
+        adcSample[i].accumulate += ar;
+      }
+      else    
+        adcSample[i].accumulate = LONG_AVERAGE_LENGTH * ar;
+    }
+  }
   adcIndex++;
   adcIndex &= 3;
+  initialized = true;
 }
 
 short average4(short *samples) {
   short avg = 0;
   for (byte i=0; i<4; i++)
     avg += *samples++;
-  return avg>>2;
+  return (avg+2)>>2;
 }
 
 void sensorSetup() {
@@ -198,17 +218,16 @@ void sensorSetup() {
 }
 
 short readSensor(const Sensor *s, byte n = 0) {
+  if (s->pin == UNUSED_PIN)
+    return FAULT;
+    
   short p = s->pin + n;
   
 #if SIMULATE_SENSORS
-    if (p < 0)
-      return FAULT;
     return simulate[simState][p&(DUAL_BIT-1)]; 
 #else
     short v;
-    if (p < 0)
-      return FAULT;
-    p &= (DUAL_BIT-1);
+    p &= 0x1f;
     
     short t = s->type;
     short toF = 0;
@@ -226,17 +245,13 @@ short readSensor(const Sensor *s, byte n = 0) {
       interrupts();
     }
     else if (p == TACH_SENSOR) {  // RPM's
-      // RPM's are occasionaly screwed up because of IRQ latency.
-      // Throw out highest and lowest and average the middle
-      noInterrupts();
-      short r[N(rpm)];
-      memcpy(r, rpm, sizeof(rpm));
-      interrupts();
-      sort(r, N(r));
-      v = average4(r + N(r)/2 - 2);    // average the middlemost 4 
+      v = average4(adcSample[12].moving) * 10;
     }
     else if (p < 16) { 
-      v = average4(adcSample[p]);
+      if (longAverageByPin[p])
+        v = adcSample[p].accumulate/LONG_AVERAGE_LENGTH;
+      else
+        v = average4(adcSample[p].moving);
       if (t == st_r240to33)
         v = interpolate(&r240to33, v);
       else if (t == st_v240to33)

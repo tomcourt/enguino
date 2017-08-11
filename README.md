@@ -43,7 +43,7 @@ On the tablet, attach to the Stratux wifi network, use the browser to navigate t
 
 The firmware is installed on the Arduino using the Arduino IDE. First install the [Arduino IDE]. Add the Ethernet 2 library by selecting 'Sketch' in the menu, 'Include Library' and 'Manage Libraries...', scroll down to 'Ethernet2' and press 'Install'. Then download the [Enguino source code] to a folder.
 
- For now just install the default configuration. Configuration involves editing the config.h file and then reinstalling the firmware. After editing the configuration, connect the Arduino to your PC via a USB cable. This will also power up the Arduino and a green light will appear next to the USB connector. Start up the Arduino software on your PC. Go `File`, `Open` and select the file `enigno.ino`. Then go `Sketch` and `Upload`. The other green LED next to the power LED will flash until the file is uploaded. Done Uploading will appear near the bottom of the window.
+ For now just install the default configuration. Configuration involves editing the config.h file and then reinstalling the firmware. After editing the configuration, connect the Arduino to your PC via a USB cable. This will also power up the Arduino and a green light will appear next to the USB connector. Start up the Arduino software on your PC. Go `File`, `Open` and select the file `enigno.ino`. Then go `Sketch` and `Upload`. The other green LED next to the power LED will flash until the file is uploaded. Done Uploading will appear near the bottom of the window. You may see a message that says "Low memory available, stability problems may occur.", you can ignore this.
 
 ## Configuration
 
@@ -201,6 +201,10 @@ Vans manifold pressure sensor is 0-90mV which is too low to accurately measure w
 For a sensor that might contain a voltage higher than Vcc (such as Van's tachometer) using a voltage divider will cause a significant load which could create issues if still attached to a backup gauge. A 15K ohm resistor between the sensor and the pin will safely clip voltages between 20.5 and -15.5 volts. The goal here is to limit the internal clamping diodes in the Arduino's CPU to no more than 1ma after the .7 volt diode drop.
 
 The tachometer measures RPM by recording the length of tim in uS time between rising edges on a pin. RPM = 60,000,000 / (time - last_time). Other interrupt functions (thermocouple and time keeping) will cause occasional jitter. Collecting 8 samples, throwing out the highest and lowest and averaging the middle 4 fixes that.
+
+One or two sensors should support 4-20mA. For those have the option of grounding the 240 ohm resitor instead of pulling it up.
+
+Fuel flow needs a 5K pull up resistor.
 
 ### Auxiliary Display
 
