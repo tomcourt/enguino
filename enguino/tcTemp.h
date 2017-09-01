@@ -104,21 +104,21 @@ SIGNAL(TIMER0_COMPA_vect)
     if (rawTC & 1) {
       if (rawIT & 7)
         tempC = FAULT;
-     }
+    }
     tcTemp[ch] = tempC;
 
     if (++ch == 8) {
       tcTemp[8] = rawIT / 64; // internal temperature reduced to quarter degree C
       ch = 0;
     }
-    ms = 255; // ++ will make this 0
+    ms = 255; // final ++ will make this 0 for next time around
 
     eighthSecond = true;
     halfSecond++;
     wholeSecond++;
 
     if (halfSecond == 4) // every half second
-      updateFuelFlow();
+      updateFuelFlow();  // fuel flow has to be sampled at accurate intervals for accurate readings
   }
   ms++;
 }

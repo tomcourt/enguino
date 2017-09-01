@@ -51,10 +51,9 @@ const bool longAverageByPin[12] = { false, false, false, false, true, true, fals
 //   sensor-type    range
 // --------------  --------
 // st_r240to33     0 - 1000   proportional on resistance of sensor forming resistor divider
-// st_v240to33     0 - 1000   proportional on voltage of sensor forming resistor divider
-// st_thermistorC  0 - 1500   degrees C. in tenths
-// st_thermistorF 320- 2732   degrees F. in tenths
-// st_volts        0 - 1000   5 mV/per count
+// st_thermistor   -/+ xxxx   degrees either F or C. 
+// st_volts1       0 - 1000   1 mV/per count
+// st_volts5       0 - 1000   5 mV/per count
 // st_k_type_tcC   0 - 4000   0-1000 degrees C. in quarters
 // st_j_type_tcC   0 - 4000   0-1000 degrees C. in quarters
 // st_k_type_tcF   0 - 4000   32-1832 degrees F. in quarters
@@ -62,15 +61,15 @@ const bool longAverageByPin[12] = { false, false, false, false, true, true, fals
 // st_unit                    unit values, RPM, fuel flow, hobbs
 
 //                      sensor-type,  pin, decimal, voffset,         vfactor,            goffset,          gfactor,lowWarning,lowCaution,highCaution,highWarning
-const Sensor voltS =  { st_volts,       0,       1,       0,     SCALE(.200),    GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
-const Sensor oilpS =  { st_v240to33,    1,       0,       0,     SCALE(.100),                  0,        SCALE(1.),        25,       55,      9999,        95 };
-const Sensor oiltS =  { st_thermistorF, 2,       0,       0,     SCALE(.100),        GMIN(50*10),      GRNG(200*10),       -1,      140,      9999,       250 };
-const Sensor fuelpS = { st_v240to33,    3,       1,       0,     SCALE(.150),                  0,  SCALE(150./100.),        5,       20,        60,        80 };
-const Sensor fuellS = { st_v240to33,  DUAL(4),   1,       0,     SCALE(.160),                  0,         SCALE(1.),       25,       50,      9999,       999 };
-const Sensor tachS =  { st_unit,    TACH_SENSOR, 0,       0,       SCALE(1.),            GMIN(0),        GRNG(3000),       -1,      500,      9999,      2700 };
-const Sensor mapS =   { st_volts,       8,       1,     102,   SCALE(.32811),          GMIN(210),GRNG(1000*25/32.811),     -1,       -1,      9999,      9999 };
-const Sensor chtS =   { st_k_type_tcF, 16,       0,       0,      SCALE(.25),        GMIN(100*4),       GRNG(400*4),       -1,      150,       400,       500 };
+const Sensor voltS =  { st_volts5,      0,       1,       0,     SCALE(.200),    GMIN(100*fromV),    GRNG(60*fromV),      110,      130,      9999,       160 };
+const Sensor oilpS =  { st_volts5,      1,       0,    -436,    SCALE(-.310),               -436,     SCALE(-3.095),       25,       55,      9999,        95 };
+const Sensor oiltS =  { st_thermistor,  2,       0,       0,      SCALE(1.),            GMIN(50),         GRNG(200),       -1,      140,      9999,       245 };
+const Sensor fuelpS = { st_volts1,      3,       1,    -626,   SCALE(-.395),               -626,      SCALE(-2.634),        5,       20,        60,        80 };
+const Sensor fuellS = { st_volts5, DUAL(4),      1,    -490,    SCALE(-.402),               -490,      SCALE(-2.512),       25,       50,      9999,       999 };
+const Sensor mapS =   { st_volts5,      8,       1,     102,   SCALE(.32811),          GMIN(210),GRNG(1000*25/32.811),     -1,       -1,      9999,      9999 };
+const Sensor chtS =   { st_k_type_tcF, 16,       0,       0,      SCALE(.25),        GMIN(100*4),       GRNG(400*4),       -1,      150,       400,       495 };
 const Sensor egtS =   { st_k_type_tcF, 20,       0,       0,      SCALE(.25),       GMIN(1000*4),       GRNG(600*4),       -1,       -1,      9999,      9999 };
+const Sensor tachS =  { st_unit,    TACH_SENSOR, 0,       0,       SCALE(1.),            GMIN(0),        GRNG(3000),       -1,      500,      9999,      2700 };
 const Sensor fuelfS = { st_unit,   FUELF_SENSOR, 1,       0,       SCALE(1.),            GMIN(0),        GRNG(150),        -1,       -1,      9999,      9999 };
 const Sensor fuelrS = { st_unit,   FUELR_SENSOR, 1,       0,       SCALE(1.),            GMIN(0),        GRNG(400),        -1,       -1,      9999,      9999 };
 const Sensor hobbsS = { st_unit,   HOBBS_SENSOR, 1,       0,       SCALE(1.),            GMIN(0),       GRNG(1000),        -1,       -1,      9999,      9999 };
@@ -97,7 +96,7 @@ const short egtLP[] =  { HSEG(150./600.), HSEG(300./600.), HSEG(450./600.) };   
 string oilpRC[] = { red,            yellow,         green,          red     };
 short  oilpRP[] = { VSEG(25./100.), VSEG(55./100.), VSEG(95./100.), VSEG(1) };
 string oiltRC[] = { yellow,         green,           red     };
-short  oiltRP[] = { VSEG(40./200.), VSEG(196./200.), VSEG(1) };     // offset and range offset by 50 deg-F
+short  oiltRP[] = { VSEG(90./200.), VSEG(195./200.), VSEG(1) };     // offset and range offset by 50 deg-F
 string voltRC[] = { red,         yellow,      green,       yellow,       red     };
 short  voltRP[] = { VSEG(1./6.), VSEG(3./6.), VSEG(5./6.), VSEG(5.9/6.), VSEG(1) };      // offset and range offset by 10 volts
 string fuelpRC[] = { red,          yellow,       green,        yellow,       red     };

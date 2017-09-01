@@ -15,22 +15,21 @@
 //  You should have received a copy of the GNU General Public License
 //  along with Enguino.  If not, see <http://www.gnu.org/licenses/>.
 
-
-
-#include <SPI.h>            // required for ethernet2
+#include <SPI.h>            // required for ethernet2 
 #include <Ethernet2.h>
+
+EthernetServer server(80);    // Port 80 is HTTP
+EthernetClient client;
+
 #include <EEPROM.h>         // required for persit.h
 #include <string.h>
 #include <avr/pgmspace.h>   // storing strings in Flash to save RAM
 
-// Temporary chang this your local network's IP range for testing
+// Temporary change this your local network's IP range for testing
 IPAddress ip(192, 168, 0, 111);   // http://192.168.0.111 is link to Enguino
 
 // fictitious MAC address. Only real critera is the first byte's 2 lsb must be 1 (for local) and 0 (for unicast).
 byte mac[] = {  0xDE, 0x15, 0x24, 0x33, 0x42, 0x51 };
-
-EthernetServer server(80);    // Port 80 is HTTP
-EthernetClient client;
 
 // #define DEBUG_RAM_USE         // checks maximum RAM usage
 // #define CALIBRATION_TEST      // show calibration values instead of fuel flow/lean info panel
@@ -81,10 +80,11 @@ void setup() {
 //      ; // wait for serial port to connect. Stops here until Serial Monitor is started. Good for debugging setup
 
   sensorSetup();
+  
   // start the Ethernet connection and the server:
   Ethernet.begin(mac, ip);
   server.begin();
-  
+
   eeInit();
   
   tcTempSetup();
@@ -117,7 +117,7 @@ void loop() {
   pollForHttpRequest();
    
   if (eighthSecond) {    
-    eighthSecond = false;
+    eighthSecond = false;   // this can fall behind due to a long event like responding to a http request
     
     updateADC();
 

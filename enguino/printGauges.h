@@ -339,7 +339,7 @@ void printInfoBox() {
   print_P(F("<rect x='0' y='0' width='1600' height='2800' fill='none' stroke='orange'/>\n"));
 #endif
 #ifdef CALIBRATION_TEST
-  print_P(F("<text x='0' y='0' text-anchor='start' font-size='250px'>_____RV____R___5V</text>"));
+  print_P(F("<text x='0' y='0' text-anchor='start' font-size='250px'>_____R___5V</text>"));
   for (byte i=1; i<6; i++) {
 	print_P(F("<text x='0' y='"));
 	print(i*275);
@@ -348,11 +348,9 @@ void printInfoBox() {
     s.pin = i;
     print(i);
     print("-");
-    s.type = st_v240to33;
-    printFixed(readSensor((const Sensor *)&s));
     s.type = st_r240to33;
     printFixed(readSensor((const Sensor *)&s));
-    s.type = st_volts;
+    s.type = st_volts5;
     printFixed(readSensor((const Sensor *)&s));
 	print_text_close();
   }

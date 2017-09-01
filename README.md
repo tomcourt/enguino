@@ -150,15 +150,15 @@ The Leonardo is rated to run from 6-20 volts although they suggest keeping it be
 
 The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing). Connected to the Aux display with most segments lit power consumed is about 140 mA. Pull ups will add some to this.
 
-**Leonardo Pins Mapping to ATmega 32U4**
+**Leonardo/Yún Pin Mapping to Enguino Prototype**
 
 | Arduino | 32U4  | Use         |IRQ|Analog|Counter| Assign  |
 |---------|-------|-------------|---|------|-------|---------|
-| D0      | PD2   | Serial RX   | * |      |       | Tach    |
-| D1      | PD3   | Serial TX   | * |      |       | Fuel-F  |
+| D0      | PD2   | Yún RX      | * |      |       | Tach    |
+| D1      | PD3   | Yún TX      | * |      |       | Fuel-F  |
 | D2      | PD1   | SDA         | * |      |       | Aux-SDA |
 | D3      | PD0   | SCL/PWM     | * |      |       | Aux-SCL |
-| D4      | PD4   | TC Mux A0   |   |  A6  |   *   |         |
+| D4      | PD4   | TC Mux A0   |   |  A6  |       |         |
 | D5      | PC6   | TC Mux A1   |   |      |       |         |
 | D6      | PD7   | TC Mux A2   |   |  A7  |   *   |         |
 | D7      | PE6   | TC Mux EN   | * |      |       |         |
@@ -166,12 +166,35 @@ The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing).
 | D9      | PB5   | TC CS       |   |  A9  |       |         |
 | D10     | PB6   | Ether CS    |   | A10  |       |         |
 | D11     | PB7   | PWM         |   |      |       | Aux-Sw  |
-| D12     | PD6   | TC MISO     |   | A11  |       |         |
+| D12     | PD6   | TC MISO     |   | A11  |   *   |         |
 | D13     | PC7   | TC SCLK/LED |   |      |       |         ||
 
 The SD card on the Leonardo can not be used with the thermocouple board attached as they both use pin D4. The thermocouple board also interferes with 4 of the analog inputs. The Leonardo itself also interferes with one of the analog inputs.
 
-The D6 and D12 pins support counters which would be useful for the tach and fuel flow. But the thermocouple board also conflicts with this. Interrupt pins will be used instead. With the tach, assume 2 pulses per revolution at 2700 RPM the tach will max out at 90/cps so as long as IRQ disable time is <11ms no error should be expected. For the fuel flow with a k-factor of 68,000 and 13GPH it will max out at 250/cps so IRQ disable time must be <4ms.
+**Leonardo/Yún Pin Mapping to Enguino Production**
+
+| Arduino | 32U4  | Use          |IRQ|Analog|Counter| Assign Leo | Assign Yún |
+|---------|-------|--------------|---|------|-------|------------|------------|
+| D0      | PD2   | Serial RX    | * |      |       | Tach-1     | reserved   |
+| D1      | PD3   | Serial TX    | * |      |       | Tach-2     | reserved   |
+| D2      | PD1   | SDA          | * |      |       | SDA        | Tach-1     |
+| D3      | PD0   | SCL          | * |      |       | SCL        | Tach-2     |
+| D4      | PD4   | Analog 6     |   |  A6  |       | Volt divide| Volt divide|
+| D5      | PC6   |              |   |      |       |            | SDA        |
+| D6      | PD7   |Analog 6/Count|   |  A7  |   *   | MAP        | Fuel-F     |
+| D7      | PE6   |Handshake(Yún)| * |      |       | Fuel-F     | reserved   |
+| D8      | PB4   | Analog 8     |   |  A8  |       | Generic    | Generic    |
+| D9      | PB5   | Analog 9     |   |  A9  |       | Generic    | Generic    |
+| D10     | PB6   | Ethernet(Leo)|   | A10  |       | reserved   | MAP        |
+| D11     | PB7   |              |   |      |       |            | SCL        |
+| D12     | PD6   | Analog 11    |   | A11  |   *   | Ammeter    | Ammeter    |
+| D13     | PC7   | LED          |   |      |       |            |            ||
+
+* Leonardo ETH needs D10 for communications
+* Yún needs D0, D1 and D7 for communication
+* Leonardo uses IRQ for fuel flow, Yún uses hardware counter instead
+
+With the tach, assume 2 pulses per revolution at 2700 RPM the tach will max out at 90/cps so as long as IRQ disable time is <11ms no error should be expected. For the fuel flow with a k-factor of 68,000 and 13GPH it will max out at 250/cps so IRQ disable time must be <4ms.
 
 ### Software
 

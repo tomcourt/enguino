@@ -200,6 +200,9 @@ void pollForHttpRequest() {
             "Connection: close\n"     // the connection will be closed after completion of the response
             "\n"
           ));
+          
+          //  Serial.print("SERVE UP ");
+          //  Serial.println(url);
           serveUpWebPage(url, var, num);
           flush();
           break;
@@ -215,6 +218,8 @@ void pollForHttpRequest() {
               }
               break;
             case '?':
+              if (token == '/')
+                continue;       // hold state
               url = token;      // either a ? or the url
               break;
             case ' ':

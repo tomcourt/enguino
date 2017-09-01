@@ -21,9 +21,6 @@
 #define FUELF_SIGNAL 1 
 #define TACH_SIGNAL  0
 
-#define RVoff           -512                    // 512 ADC units is when ADC when gauge reads 0, using a 240-33 ohm sensor and a 240 ohm divider
-#define RVscale         (1000.0/(124+RVoff))    // 124 ADC units is when ADC when gauge reads max, using same
-
 #define HOBBS_COUNT_INTERVAL (3600/40)    // update hobbs 40 times an hour
 
 extern volatile short tcTemp[9];    // in quarter deg. C, tcTemp[8] is the interal reference temp, disable IRQ's to access these
@@ -51,20 +48,21 @@ byte hobbsCount = HOBBS_COUNT_INTERVAL/2;  // in order to prevent cumulative hob
 
 
 static const byte thermistorBS[] = { 
-  3,3,3,3,3,3,4,4,
-  4,4,4,4,4,5,5,5,
-  5,5,6,6,7,6,6,5,
-  5,5,5,4,4,4,4    
+  4,4,4,4,
+  4,5,5,5,
+  5,5,5,5,
+  5,5,4,4
 };
 
-static const short thermistorYV[] = { 
-  1500,1438,1384,1336,1293,1254,1219,1155,
-  1100,1051,1008,968,932,898,838,784,
-  736,692,650,575,505,375,310,241,
-  204,164,121,72,44,14,-19,-58
+static const short thermistorYV[] = {
+  303,280,262,248,
+  236,224,205,188,
+  173,158,144,128,
+  112,93,69,53,
+  31
 };
 
-const InterpolateTable thermistor = { 64, 32, thermistorBS, thermistorYV }; 
+const InterpolateTable thermistor = { 64, 17, thermistorBS, thermistorYV }; 
 
 static const byte r240to33BS[] = { 
   5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 
@@ -152,6 +150,8 @@ inline void updateRPM() {
   if (tachCount) {
     unsigned long interval = latestTach_uS-savedTach_uS;
     rpm10 = ((60*1000000L/TACH_DIVIDER/10)*tachCount + interval/2) / interval;
+    if (rpm10 < 0)
+      rpm10 = 0;
   }
   else
     rpm10 = 0;
@@ -226,56 +226,51 @@ short readSensor(const Sensor *s, byte n = 0) {
 #if SIMULATE_SENSORS
     return simulate[simState][p&(DUAL_BIT-1)]; 
 #else
-    short v;
-    p &= 0x1f;
-    
-    short t = s->type;
-    short toF = 0;
-    if (p == HOBBS_SENSOR) { // Hobbs hours*10 (lowest 4 digits)
-      v = ee_status.hobbs >> 2;
-    }
-    else if (p == FUELF_SENSOR) {      // Fuel flow GPH*10
-      noInterrupts();
-      v = short((multiply(fflowRate, int(10*3600L/40/2)) + (ee_settings.kFactor>>1)) / ee_settings.kFactor);
-      interrupts();
-    }
-    else if (p == FUELR_SENSOR) { // Fuel remaining Gallons*10 (totalizer)
-      noInterrupts();
-      v = ee_status.fuel >> 2;
-      interrupts();
-    }
-    else if (p == TACH_SENSOR) {  // RPM's
-      v = average4(adcSample[12].moving) * 10;
-    }
-    else if (p < 16) { 
-      if (longAverageByPin[p])
-        v = adcSample[p].accumulate/LONG_AVERAGE_LENGTH;
-      else
-        v = average4(adcSample[p].moving);
-      if (t == st_r240to33)
-        v = interpolate(&r240to33, v);
-      else if (t == st_v240to33)
-        v = multiplyAndScale(SCALE(RVscale),v+RVoff, divisor);
-      else if (t == st_thermistorC || t == st_thermistorF) {
-        v = interpolate(&thermistor, v);
-        if (t == st_thermistorF)
-          toF = 32 * 10;
-      }
-      else if (t == st_volts)
-        v = multiplyAndScale(v,1000,10);
-    }
-    else if (p < 24) {     
-      noInterrupts();
-      v = tcTemp[p-16];
-      interrupts();
-      if (t == st_j_type_tcC || t == st_j_type_tcF)
-       v = multiplyAndScale(v - tcTemp[8], 25599, 15) + tcTemp[8]; 
-      if (t == st_k_type_tcF || t == st_j_type_tcF)
-        toF = 32 * 4;
-    }
-    if (toF && v != FAULT) 
-      v = (v*9)/5 + toF;
-    return v;     
+  short v;
+  p &= 0x1f;
+  
+  byte t = s->type;
+  if (p == HOBBS_SENSOR) { // Hobbs hours*10 (lowest 4 digits)
+    v = ee_status.hobbs >> 2;
+  }
+  else if (p == FUELF_SENSOR) {      // Fuel flow GPH*10
+    noInterrupts();
+    v = short((multiply(fflowRate, int(10*3600L/40/2)) + (ee_settings.kFactor>>1)) / ee_settings.kFactor);
+    interrupts();
+  }
+  else if (p == FUELR_SENSOR) { // Fuel remaining Gallons*10 (totalizer)
+    noInterrupts();
+    v = ee_status.fuel >> 2;
+    interrupts();
+  }
+  else if (p == TACH_SENSOR) {  // RPM's
+    v = average4(adcSample[12].moving) * 10;
+  }
+  else if (p < 16) { 
+    if (longAverageByPin[p])
+      v = adcSample[p].accumulate/LONG_AVERAGE_LENGTH;
+    else
+      v = average4(adcSample[p].moving);
+    /* if (t == st_r240to33)
+      v = interpolate(&r240to33, v);
+    else */ 
+    if (t == st_thermistor)
+      v = interpolate(&thermistor, v);
+    else if (t == st_volts5)
+      v = multiplyAndScale(v,1000,10);    // change from 0-1023 to 0-999
+   else if (t == st_volts1)
+      v = multiplyAndScale(v,5000,10);    // change from 0-204 to 0-999
+  }
+  else if (p < 24) {     
+    noInterrupts();
+    v = tcTemp[p-16];
+    interrupts();
+    if (t == st_j_type_tcC || t == st_j_type_tcF)
+     v = multiplyAndScale(v - tcTemp[8], 25599, 15) + tcTemp[8]; 
+    if (v != FAULT && (t == st_k_type_tcF || t == st_j_type_tcF))
+      v = (v*9)/5 + 32*4;
+  }
+  return v;     
 #endif
 }
 

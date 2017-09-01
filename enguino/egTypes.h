@@ -57,7 +57,7 @@ typedef struct {
   const short  *result;
 } InterpolateTable;
 
-enum SensorType {st_r240to33, st_v240to33, st_thermistorF, st_thermistorC, st_volts, st_k_type_tcF, st_j_type_tcF, st_k_type_tcC, st_j_type_tcC, st_unit};
+enum SensorType {st_r240to33, st_thermistor, st_volts1, st_volts5, st_k_type_tcF, st_j_type_tcF, st_k_type_tcC, st_j_type_tcC, st_unit};
 
 typedef struct {
   SensorType type;
