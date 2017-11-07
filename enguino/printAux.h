@@ -20,9 +20,6 @@
 
 
 
-// Digital pin assignment
-#define AUX_SWITCH   11
-
 // lookup port mapping to pins here: https://www.arduino.cc/en/Reference/PortManipulation
 #define SCL_PIN 0
 #define SCL_PORT PORTD
@@ -47,8 +44,9 @@
 #define HT16K33_CMD_BRIGHTNESS 0xE0
 #define HT16K33_BRIGHT_MAX    (HT16K33_CMD_BRIGHTNESS | 15)
 #define HT16K33_BRIGHT_MIN    (HT16K33_CMD_BRIGHTNESS | 0)
+#define HT16K33_ROW15_SCAN 0xA0
 
-#define I2C_ADDRESS   (0x70<<1)    // second line is 0x71
+#define I2C_ADDRESS   (0x70<<1)   
 
 // segments are aranged as follows (values are hexadecimal)
 //
@@ -116,57 +114,105 @@
 #define LED_Z 0x5b    // same as 2
 #define LED_z 0x5b    // same as Z, 2
 
-volatile byte switchDown;   // use this for detecting a key held down for a period of time
-volatile byte switchUp;
-volatile byte switchPress;   // use this to detect a short keypress, then reset to 0
-
-static const byte addressDigit[] = { 1, 3, 7, 9 };    // skip the colon
 static const byte characterMap[] = { LED_0, LED_1, LED_2, LED_3, LED_4, LED_5, LED_6, LED_7, LED_8, LED_9 };
 
-static byte ledBuffer[17];   // first byte is 0 for the address, 2 is first digit, 4 the second, etc.
+static byte ledBuffer[17];   // first byte is 0 for the address. Each 2 bytes after are the rows for each column
+// The bits of each word correspond as follows: 0-3 are top digits, 4 is top colon, 5-8 are bottom digits, 9 is bottom colon, 11-14 are LEDs
+#define TOP_LINE 0
+#define BOTTOM_LINE 5
 
-byte alertStatus;
-#define STATUS_WARNING   0x4
-#define STATUS_CAUTION 0x5
-#define STATUS_NORMAL  0x1
+byte alertStatus, masterAlertStatus;
 
-byte colon;
-#define LED_COLON 2
+#define RED_LED    0x10
+#define YELLOW_LED 0x18
+#define GREEN_LED  0x8
+byte alertToLED[3] = { GREEN_LED, YELLOW_LED, RED_LED};
 
-void writeI2C(byte line, byte *buffer, byte len) {
-  if (i2c_start((I2C_ADDRESS | (line<<1)) | I2C_WRITE)) {
-    while (len--) {
-      if (!i2c_write(*buffer++))
-        break;
-    }
+#define STATUS_WARNING 2
+#define STATUS_CAUTION 1
+#define STATUS_NORMAL  0
+
+#define LED_COLON 3
+
+#define NEXT_KEY 1
+#define NEXT_BIT 1
+#define ACK_KEY 3
+#define ACK_BIT 2
+#define LAST_KEY 5
+#define LAST_BIT 4
+
+void writeI2C(byte *buffer, byte len) {
+  if (i2c_start(I2C_ADDRESS | I2C_WRITE)) {
+    while (len--) 
+      if (!i2c_write(*buffer++)) 
+         break;
   }
   i2c_stop();
 }
 
 // use this to set blink or brightness
-void commandLED(byte line, byte command) {
-  writeI2C(line, &command, 1);
+void commandLED(byte command) {
+  writeI2C(&command, 1);
 }
 
-void writeLED(byte line) {
-  writeI2C(line, ledBuffer, sizeof(ledBuffer));
-}
-
-void printLEDRawDigits(byte offset, word val) {
-  while (offset--) {
-    ledBuffer[addressDigit[offset]] = characterMap[val%10];
-    val /= 10;
-    if (val == 0)
-      break;
+byte readKeys() {
+  static byte last = 0;
+  
+  byte keys[6];
+  if (i2c_start(I2C_ADDRESS | I2C_WRITE)) 
+    i2c_write(0x40);
+  
+  byte *buffer = keys;
+  byte len = sizeof(keys) - 1;
+  if (i2c_rep_start(I2C_ADDRESS | I2C_READ)) {
+    while (len--) 
+      *buffer++ = i2c_read(false);
+    *buffer = i2c_read(true);
   }
+ 
+  i2c_stop();
+
+  byte out = 0;
+  if (keys[LAST_KEY])
+    out |= LAST_BIT;
+  if (keys[ACK_KEY])
+    out |= ACK_BIT;
+  if (keys[NEXT_KEY])
+    out |= NEXT_BIT;
+  if (last != out) {
+    last = out;
+    return out;
+  }
+  return 0;
+}
+
+void writeSegments(byte digit, byte segments) {
+  word bit = 1<<digit;
+  for (int i=0; i<8; i++) {
+    if (segments & 1)
+      ((word *)(ledBuffer+1))[i] |= bit;
+    segments >>= 1;
+  }
+}
+
+void writeLED() {
+  writeI2C(ledBuffer, sizeof(ledBuffer));
+}
+
+// must prevent more than 4 digits from printing
+void printLEDRawDigits(byte offset, word val) {
+  do {
+    writeSegments(offset++, characterMap[val%10]);
+    val /= 10;
+  } while (val);
 }
 
 // Number is clipped at 999 and has a decimal point at 1.
 // Numbers greater than 99 are displayed whole, smaller in tenths
 void printLEDRawHalfDigits(byte offset, word number) {
   if (short(number) == FAULT) {
-    ledBuffer[addressDigit[offset-1]] = LED__;
-    ledBuffer[addressDigit[offset-2]] = LED__;
+    writeSegments(offset, LED__);
+    writeSegments(offset+1, LED__);
   }
   else {
     if (number < 0)
@@ -175,96 +221,71 @@ void printLEDRawHalfDigits(byte offset, word number) {
       number = 999;
     if (number < 100) {
       printLEDRawDigits(offset, number);
-      ledBuffer[addressDigit[offset-2]] |= LED_DP;   // decimal point
+      writeSegments(offset+1, LED_DP);
     }
     else
       printLEDRawDigits(offset, number/10);
   }
 }
 
-void printStatus(byte line) {
+void prepareLED() {
   memset(ledBuffer, 0, sizeof(ledBuffer));
-  if (line == 0) {
     // 4/9 duty cycle for caution/alarm indicator  (22 ma max current, 13 ma typical)
-    ledBuffer[6] = ledBuffer[14] = ((alertStatus == STATUS_CAUTION) ? STATUS_NORMAL : alertStatus);  // yellow = 2/4 green +
-    ledBuffer[2] = ledBuffer[10] = alertStatus;                                                      //          2/4 green + 2/4 red
-  }
+  byte ledState = (alertToLED[alertStatus]<<2) | alertToLED[masterAlertStatus];
+  byte halfTimeColor = ledState;
+  if ((ledState&YELLOW_LED) == YELLOW_LED)
+    halfTimeColor ^= RED_LED;
+  if ((ledState&(YELLOW_LED<<2)) == (YELLOW_LED<<2))
+    halfTimeColor ^= (RED_LED << 2);    
+  ledBuffer[14] = halfTimeColor;  
+  ledBuffer[6] = ledBuffer[2] = ledBuffer[10] = ledState;     
 }
 
 // -------------------------------------------------------
 
 void printLEDSetup() {
-  // Aux switch grounds pin when pressed, pollAuxSwitch watches for changes in this pin
-  pinMode(AUX_SWITCH, INPUT_PULLUP);
-
   i2c_init();
+  commandLED(HT16K33_OSCILATOR_ON);
+  commandLED(HT16K33_BLINK_OFF);
+  commandLED(HT16K33_BRIGHT_MAX);
+  commandLED(HT16K33_ROW15_SCAN);
 
-  for (byte line=0; line<2; line++) {
-    commandLED(line, HT16K33_OSCILATOR_ON);
-    commandLED(line, HT16K33_BLINK_OFF);
-    commandLED(line, HT16K33_BRIGHT_MAX);
-  }
+  ledBuffer[0] = 0;
 }
 
 // print a text message to the LED on line 0 or 1
-void printLED(byte line, byte a, byte b, byte c, byte d) {
-  printStatus(line);
-  ledBuffer[1] =  a;
-  ledBuffer[3] =  b;
-  ledBuffer[5] =  colon; // turn colon off
-  ledBuffer[7] =  c;
-  ledBuffer[9] = d;
-  writeLED(line);
+void printLED(byte offset, byte a, byte b, byte c, byte d) {
+  writeSegments(offset+3, a);
+  writeSegments(offset+2, b);
+  writeSegments(offset+1, c);
+  writeSegments(offset+0, d);
 }
 
-// print a text message to the LED on line 0 or 1
-void printLED(byte line, byte *txt) {
-  printLED(line, txt[0], txt[1], txt[2], txt[3]);
+// print a text message to the LED
+void printLED(byte offset, byte *txt) {
+  printLED(offset, txt[0], txt[1], txt[2], txt[3]);
 }
 
 // print the fuel gauge (e.g. 2.5:17)  (left tank : right tank)
-void printLEDFuel(short left, short right) {
-  memset(ledBuffer, 0, sizeof(ledBuffer));
-  ledBuffer[1] = ledBuffer[7] = 0;
-  printLEDRawHalfDigits(2, left);
-  printLEDRawHalfDigits(4, right);
-  ledBuffer[5] = LED_COLON;
-  writeLED(1);
+void printLEDFuel(byte offset, short left, short right) {
+  printLEDRawHalfDigits(offset+2, left);
+  printLEDRawHalfDigits(offset, right);
+  writeSegments(offset+4, LED_COLON);
 }
 
 // print the 'number' to 'line' 0 or 1, place a decimal point 'decimal' digits to the left
-void printLED(byte line, short number, byte decimal) {
+void printLED(byte offset, short number, byte decimal) {
   if (number == FAULT) {
-    printLED(line, LED_TEXT(i,n,o,P));
+    printLED(offset, LED_TEXT(i,n,o,P));
   }
   else {
     if (number < 0)
       number = 0;
     if (number > 9999)
       number = 9999;
-    printStatus(line);
-    printLEDRawDigits(4, number);
+    printLEDRawDigits(offset, number);
     if (decimal != 0)
-      ledBuffer[addressDigit[3-decimal]] |= LED_DP;
+      writeSegments(offset+decimal, LED_DP); 
   }
-  writeLED(line);
-}
+ }
 
-// call this about 8 times a second in an IRQ
-inline void pollAuxSwitch() {
-  if (digitalRead(AUX_SWITCH)) {
-    // switch up
-    if (switchUp < 255)
-      switchUp++;
-    if (switchUp >  2) {    // debounce test, button must be up for more than 1/4 second before considered a button up state
-      if (switchDown)
-        switchPress = switchDown;
-      switchDown = 0;
-    }
-   }
-  else {
-    // switch is down
-    ++switchDown;
-    switchUp = 0;
-  }
-}

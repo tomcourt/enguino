@@ -1,3 +1,4 @@
+
 // Copyright 2017, Thomas Court
 //
 //  This file is part of Enguino.
@@ -100,9 +101,7 @@ void setup() {
     showAuxPage();
     delay(2000);
   }
-  
-  switchPress = 0;   
-}
+ }
 
 
 
@@ -111,6 +110,8 @@ void loop() {
   if (Serial.read() >= 0) {
     if (++simState >= SIMULATE_SENSORS)
       simState = 0;
+    Serial.print("test-");
+    Serial.println(simState);
   }
 #endif
 
@@ -121,7 +122,7 @@ void loop() {
     
     updateADC();
 
-    checkAuxSwitch();
+    checkSwitches();
 
     // every half second
     // -----------------
@@ -131,14 +132,14 @@ void loop() {
       updateRPM();
       engineRunning = isEngineRunning();
 
+      updateAlerts();
+
       if (engineRunning) {
-        alertStatus = STATUS_NORMAL;
-        updateAlerts();
-        checkForAlerts(false); 
-        checkForAlerts(true);  
+        masterAlertStatus = STATUS_NORMAL;
+        checkForAlerts();  
       }
       else
-        alertStatus = STATUS_WARNING;
+        masterAlertStatus = STATUS_WARNING;
         
       showAuxPage(); 
 

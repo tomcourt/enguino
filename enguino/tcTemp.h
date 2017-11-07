@@ -89,8 +89,6 @@ SIGNAL(TIMER0_COMPA_vect)
     // begin conversion
     digitalWrite(PINCS, HIGH);
     // ... wait 100 mS for conversion to complete
-
-    pollAuxSwitch();
   }
   else if (ms == 121) {   // spec says 100mS, IRQ's are a bit slower, so this is >100mS
     // stop conversion, start serial interface

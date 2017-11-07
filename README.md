@@ -171,28 +171,30 @@ The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing).
 
 The SD card on the Leonardo can not be used with the thermocouple board attached as they both use pin D4. The thermocouple board also interferes with 4 of the analog inputs. The Leonardo itself also interferes with one of the analog inputs.
 
-**Leonardo/Yún Pin Mapping to Enguino Production**
+**Arduino Pin Mapping to Enguino Production**
 
-| Arduino | 32U4  | Use          |IRQ|Analog|Counter| Assign Leo | Assign Yún |
-|---------|-------|--------------|---|------|-------|------------|------------|
-| D0      | PD2   | Serial RX    | * |      |       | Tach-1     | reserved   |
-| D1      | PD3   | Serial TX    | * |      |       | Tach-2     | reserved   |
-| D2      | PD1   | SDA          | * |      |       | SDA        | Tach-1     |
-| D3      | PD0   | SCL          | * |      |       | SCL        | Tach-2     |
-| D4      | PD4   | Analog 6     |   |  A6  |       | Volt divide| Volt divide|
-| D5      | PC6   |              |   |      |       |            | SDA        |
-| D6      | PD7   |Analog 6/Count|   |  A7  |   *   | MAP        | Fuel-F     |
-| D7      | PE6   |Handshake(Yún)| * |      |       | Fuel-F     | reserved   |
-| D8      | PB4   | Analog 8     |   |  A8  |       | Generic    | Generic    |
-| D9      | PB5   | Analog 9     |   |  A9  |       | Generic    | Generic    |
-| D10     | PB6   | Ethernet(Leo)|   | A10  |       | reserved   | MAP        |
-| D11     | PB7   |              |   |      |       |            | SCL        |
-| D12     | PD6   | Analog 11    |   | A11  |   *   | Ammeter    | Ammeter    |
-| D13     | PC7   | LED          |   |      |       |            |            ||
+| Arduino | 32U4  | Use           |IRQ|Analog|Counter| Assign Leo | Alternate    |
+|---------|-------|---------------|---|------|-------|------------|--------------|
+| D0      | PD2   | Serial RX/IRQ | * |      |       | Tach-1     |              |
+| D1      | PD3   | Serial TX/IRQ | * |      |       | Tach-2     |              |
+| D2      | PD1   | SDA/IRQ       | * |      |       | SDA        | Tach-1       |
+| D3      | PD0   | SCL/IRQ       | * |      |       | SCL        | Tach-2       |
+| D4      | PD4   | Analog 6      |   |  A6  |       | Volt divide|              |             
+| D5      | PC6   |               |   |      |       |            | SDA          |
+| D6      | PD7   |Analog 7/Count |   |  A7  |   *   | MAP        |Fuel-F/generic|
+| D7      | PE6   | IRQ           | * |      |       | Fuel-F     |              |
+| D8      | PB4   | Analog 8      |   |  A8  |       | Generic    |              |
+| D9      | PB5   | Analog 9      |   |  A9  |       | Ammeter    | generic      |
+| D10     | PB6   | Ethernet(Leo) |   | A10  |       | Ethernet   | MAP          |
+| D11     | PB7   |               |   |      |       |            | SCL          |
+| D12     | PD6   |Analog 11/Count|   | A11  |   *   | Generic    | Fuel-Flow2   |
+| D13     | PC7   | LED           |   |      |       |            |              ||
 
 * Leonardo ETH needs D10 for communications
-* Yún needs D0, D1 and D7 for communication
-* Leonardo uses IRQ for fuel flow, Yún uses hardware counter instead
+* Tach needs an IRQ
+* Fuel flow can either be IRQ or counters
+* Fuel flow is either a dedicated pin or an analog pin w. 1k pull up & capacitor shorted
+* Alternate generic is instead of MAP and Ammeter available on kit form
 
 With the tach, assume 2 pulses per revolution at 2700 RPM the tach will max out at 90/cps so as long as IRQ disable time is <11ms no error should be expected. For the fuel flow with a k-factor of 68,000 and 13GPH it will max out at 250/cps so IRQ disable time must be <4ms.
 
