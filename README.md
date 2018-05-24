@@ -1,5 +1,7 @@
 # Enguino
 
+Please note - although I continue to use Enguino in my plane, no further development is likely on this project. As it is open source feel free to fork and otherwise make use of any portion of Enguino.
+
 ## General Description
 
 Enguino (a portmanteau of engine and Arduino) is an inexpensive _(as cheap as $100)_, lightweight _(2 ounces w/o case or cables)_, small _(about the size of a bar of bath soap)_, [open source] engine monitor for experimental aircraft. The engine monitor is displayed on a tablet as a web page. Here is an [example] of a typical Enguino display. The tablet can be an iPad, an Android or any other tablet that includes a modern web browser and has wifi.
@@ -14,7 +16,9 @@ Because Enguino is experimental, it is recommended that you don't replace your l
 
 ## Aux Display
 
-The auxiliary display will fit in a 3 1/8" cutout. Here is a [photo of the prototype]. It is showing the default page for a fixed pitch prop airplane. It is showing RPM's on top and left and right fuel in gallons on the bottom. The red LED in top shows a warning alarm is active.
+The new aux display consisted of a small custom circuit board with 2 lines of 4 7 segment digits. It has 3 separate control buttons (last/clear/next) and 2 status LED's. It is contained in a 3d printed case. It fits into a 2 1/4" cutout. It's wired to the Enguino module via a USB style cable although electrically it is not USB, the cable was chosen for because their cheap and available in many lengths. I'd like to thank Phillip Starbuck for laying out the board, designing the enclosure and laying out the board. His files can be found on this site.
+
+The original auxiliary display fitted into a 3 1/8" cutout. Here is a [photo of the prototype]. It is showing the default page for a fixed pitch prop airplane. It is showing RPM's on top and left and right fuel in gallons on the bottom. The red LED in top shows a warning alarm is active.
 
 In the middle is a two lines of 4 digit 7 segment LED displays. Limited text is also shown on the display.
 
@@ -25,7 +29,7 @@ A pushbutton is below the display. Tapping the button acknowledges an alert if o
 In normal operation (for a fixed pitch prop) the tachometer and fuel for left and right tank in gallons is shown as `2300` / `15:10` (2300 rpm, 15 gallons left tank, 10 gallons right). Excessive RPM's cause the tachometer to blink. On power up the following sequence would be shown:
 * `Hobb` / `123.4`    only last 4 digits of hobbs shown
 * `bAt` / `12.2`      alternator-battery voltage
-* `   0` / `15:10`
+* `   0` / `15:10`    RPM is zero since engine is stopped
 
 Whenever out of range indicators happen the display switch to showing the condition and the value, for example `OP L` / `10`. A 'warning' (red) out of range will be indicated by the first line blinking and the annunciator LED also blinking red. Pressing the pushbutton stops the blinking. Pressing it again cycles the display to the next information page. The annunciator LED continues to be red as long as the condition persists. In the case of a caution condition (yellow range) the annunciator LED turns yellow. When the engine isn't turning some alerts are suppressed.
 
@@ -36,6 +40,8 @@ The main board is a particular type of Arduino called the [Leonardo ETH]. This A
 Arduino expansion boards are referred as _shields_. Attached to the Leonardo is an 8 input [thermocouple shield]. This assumes you want CHT/EGT temperatures. If not a simple [proto shield] can be used instead.
 
 The prototyping area of either of the shields will have a number of resistors and other components added to it to complete the Enguino. Some basic soldering will be required to complete this project. A parts list can be found further down. **TBD** - Instructions for assembly or create circuit boards.
+
+Note - the intent was to create a new circuit board with a much better thermocouple sensor, the current board is a little marginal when I switched to electronic ignition that has unshielded ignition wires running in parallel to the thermocouple wires. It was also going to add tachometer sensing via the magneto wires. It would also provide an ammeter function. The schematic for this board can be found on this site but it untested (except in SPICE).
 
 ## Software
 
@@ -150,7 +156,7 @@ The Leonardo is rated to run from 6-20 volts although they suggest keeping it be
 
 The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing). Connected to the Aux display with most segments lit power consumed is about 140 mA. Pull ups will add some to this.
 
-**Leonardo/Yún Pin Mapping to Enguino Prototype**
+**Leonardo Pin Mapping to Enguino Prototype**
 
 | Arduino | 32U4  | Use         |IRQ|Analog|Counter| Assign  |
 |---------|-------|-------------|---|------|-------|---------|
@@ -171,7 +177,7 @@ The supply is rated for 1000 ma. The Leonardo uses 82 mA (confirmed by testing).
 
 The SD card on the Leonardo can not be used with the thermocouple board attached as they both use pin D4. The thermocouple board also interferes with 4 of the analog inputs. The Leonardo itself also interferes with one of the analog inputs.
 
-**Arduino Pin Mapping to Enguino Production**
+**Arduino Pin Mapping to Enguino Custom Circuit Board**
 
 | Arduino | 32U4  | Use           |IRQ|Analog|Counter| Assign Leo | Alternate    |
 |---------|-------|---------------|---|------|-------|------------|--------------|
